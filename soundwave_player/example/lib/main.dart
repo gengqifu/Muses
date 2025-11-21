@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
-
-import 'package:flutter/services.dart';
 import 'package:soundwave_player/soundwave_player.dart';
 
 void main() {
@@ -16,35 +13,25 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  String _platformVersion = 'Unknown';
-  final _soundwavePlayerPlugin = SoundwavePlayer();
+  final _player = SoundwavePlayer();
+  String _status = 'Idle';
 
-  @override
-  void initState() {
-    super.initState();
-    initPlatformState();
+  Future<void> _init() async {
+    try {
+      await _player.init(const SoundwaveConfig(sampleRate: 48000, bufferSize: 2048, channels: 2));
+      setState(() => _status = 'Initialized');
+    } catch (e) {
+      setState(() => _status = 'Init failed: $e');
+    }
   }
 
-  // Platform messages are asynchronous, so we initialize in an async method.
-  Future<void> initPlatformState() async {
-    String platformVersion;
-    // Platform messages may fail, so we use a try/catch PlatformException.
-    // We also handle the message potentially returning null.
+  Future<void> _load() async {
     try {
-      platformVersion = await _soundwavePlayerPlugin.getPlatformVersion() ??
-          'Unknown platform version';
-    } on PlatformException {
-      platformVersion = 'Failed to get platform version.';
+      await _player.load('file://sample');
+      setState(() => _status = 'Load called (placeholder)');
+    } catch (e) {
+      setState(() => _status = 'Load failed: $e');
     }
-
-    // If the widget was removed from the tree while the asynchronous platform
-    // message was in flight, we want to discard the reply rather than calling
-    // setState to update our non-existent appearance.
-    if (!mounted) return;
-
-    setState(() {
-      _platformVersion = platformVersion;
-    });
   }
 
   @override
@@ -55,7 +42,15 @@ class _MyAppState extends State<MyApp> {
           title: const Text('Plugin example app'),
         ),
         body: Center(
-          child: Text('Running on: $_platformVersion\n'),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text('Status: $_status'),
+              const SizedBox(height: 16),
+              ElevatedButton(onPressed: _init, child: const Text('Init player')),
+              ElevatedButton(onPressed: _load, child: const Text('Load sample (noop)')),
+            ],
+          ),
         ),
       ),
     );
