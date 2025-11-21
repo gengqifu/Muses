@@ -1,31 +1,59 @@
+import 'package:flutter/services.dart';
+
 import 'soundwave_config.dart';
+import 'soundwave_exception.dart';
 
-/// Stub implementation for TDD: methods will be implemented in later tasks.
+/// Platform-agnostic API for the SoundWave plugin.
 class SoundwavePlayer {
-  SoundwavePlayer();
+  SoundwavePlayer({BinaryMessenger? messenger})
+      : _methodChannel = MethodChannel(_methodChannelName, const StandardMethodCodec(), messenger),
+        _stateChannel = EventChannel('$_eventPrefix/state', const StandardMethodCodec(), messenger),
+        _pcmChannel = EventChannel('$_eventPrefix/pcm', const StandardMethodCodec(), messenger),
+        _spectrumChannel = EventChannel('$_eventPrefix/spectrum', const StandardMethodCodec(), messenger);
 
-  Future<void> init(SoundwaveConfig config) {
-    // TODO: implement MethodChannel bridge
-    throw UnimplementedError();
+  static const String _methodChannelName = 'soundwave_player';
+  static const String _eventPrefix = 'soundwave_player/events';
+
+  final MethodChannel _methodChannel;
+  final EventChannel _stateChannel;
+  final EventChannel _pcmChannel;
+  final EventChannel _spectrumChannel;
+
+  Stream<dynamic> get stateEvents => _stateChannel.receiveBroadcastStream();
+  Stream<dynamic> get pcmEvents => _pcmChannel.receiveBroadcastStream();
+  Stream<dynamic> get spectrumEvents => _spectrumChannel.receiveBroadcastStream();
+
+  Future<void> init(SoundwaveConfig config) async {
+    config.validate();
+    await _invoke<void>('init', config.toMap());
   }
 
-  Future<void> load(String source, {Map<String, Object?>? headers}) {
-    throw UnimplementedError();
+  Future<void> load(String source, {Map<String, Object?>? headers}) async {
+    if (source.trim().isEmpty) {
+      throw ArgumentError.value(source, 'source', 'cannot be empty');
+    }
+    await _invoke<void>('load', <String, Object?>{
+      'source': source,
+      if (headers != null) 'headers': headers,
+    });
   }
 
-  Future<void> play() {
-    throw UnimplementedError();
+  Future<void> play() => _invoke<void>('play');
+  Future<void> pause() => _invoke<void>('pause');
+  Future<void> stop() => _invoke<void>('stop');
+
+  Future<void> seek(Duration position) async {
+    if (position.isNegative) {
+      throw ArgumentError.value(position, 'position', 'must be >= 0');
+    }
+    await _invoke<void>('seek', <String, Object?>{'positionMs': position.inMilliseconds});
   }
 
-  Future<void> pause() {
-    throw UnimplementedError();
-  }
-
-  Future<void> stop() {
-    throw UnimplementedError();
-  }
-
-  Future<void> seek(Duration position) {
-    throw UnimplementedError();
+  Future<T?> _invoke<T>(String method, [Map<String, Object?>? arguments]) async {
+    try {
+      return await _methodChannel.invokeMethod<T>(method, arguments);
+    } on PlatformException catch (e) {
+      throw SoundwaveException(e.code, e.message ?? 'Unknown error', e.details);
+    }
   }
 }
