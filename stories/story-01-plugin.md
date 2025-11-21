@@ -15,6 +15,6 @@
 - ✅ [7] 配置 `flutter analyze`、format 钩子。
 
 ## 完成标准（DoD）
-- ✖ [8] 单测通过：MethodChannel/参数校验/错误映射；EventChannel 订阅/取消。
+- ✅ [8] 单测通过：MethodChannel/参数校验/错误映射；EventChannel 订阅/取消。
 - ✖ [9] `flutter analyze` 通过；`flutter test` 通过。
 - ✖ [10] README 简要说明调用方式。
