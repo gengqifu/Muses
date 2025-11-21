@@ -9,6 +9,7 @@ option(SW_BUILD_TESTS "Build tests" ON)
 
 add_library(soundwave_core STATIC
   src/audio_engine_stub.cpp
+  src/decoder_stub.cpp
 )
 target_include_directories(soundwave_core PUBLIC include)
 
@@ -18,10 +19,8 @@ if(SW_BUILD_TESTS AND NOT ANDROID AND NOT IOS)
   if(GTest_FOUND)
     add_executable(audio_core_tests
       tests/audio_engine_test.cpp
-      src/audio_engine_stub.cpp
     )
-    target_include_directories(audio_core_tests PUBLIC include)
-    target_link_libraries(audio_core_tests PRIVATE GTest::gtest_main)
+    target_link_libraries(audio_core_tests PRIVATE soundwave_core GTest::gtest_main)
     add_test(NAME audio_core_tests COMMAND audio_core_tests)
   else()
     message(WARNING "GTest not found; tests will be skipped")

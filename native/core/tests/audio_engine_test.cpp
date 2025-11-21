@@ -1,4 +1,5 @@
 #include "audio_engine.h"
+#include "decoder.h"
 
 #include <gtest/gtest.h>
 #include <memory>
@@ -39,6 +40,15 @@ TEST_F(AudioEngineTest, CallbacksCanBeSet) {
   EXPECT_FALSE(state_called);
   EXPECT_FALSE(pcm_called);
   EXPECT_FALSE(pos_called);
+}
+
+TEST(DecoderStubTest, OpenAndRead) {
+  std::unique_ptr<Decoder> dec = CreateStubDecoder();
+  ASSERT_TRUE(dec->Open("file://sample"));
+  PcmBuffer buf;
+  EXPECT_FALSE(dec->Read(buf));  // EOF
+  EXPECT_EQ(buf.sample_rate, 48000);
+  EXPECT_EQ(buf.channels, 2);
 }
 
 }  // namespace sw

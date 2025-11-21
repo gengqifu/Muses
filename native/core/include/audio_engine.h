@@ -17,6 +17,8 @@ enum class Status {
   kError = 1,
   kInvalidState = 2,
   kInvalidArguments = 3,
+  kNotSupported = 4,
+  kIoError = 5,
 };
 
 enum class PlaybackState {
