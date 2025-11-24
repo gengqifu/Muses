@@ -26,8 +26,9 @@
 
 ## CMake 集成 FFmpeg
 
-- 默认 `SW_ENABLE_FFMPEG=OFF`，使用桩实现。启用真实 FFmpeg 时：
-  - 桌面：`-DSW_ENABLE_FFMPEG=ON -DFFMPEG_ROOT_DESKTOP=/path/to/ffmpeg/build/desktop`
-  - iOS：`-DSW_ENABLE_FFMPEG=ON -DFFMPEG_ROOT_IOS=/Users/gengqifu/git/ext/SoundWave/ffmpeg/build/ios/arm64`
-  - Android：`-DSW_ENABLE_FFMPEG=ON -DFFMPEG_ROOT_ANDROID=/Users/gengqifu/git/ext/SoundWave/ffmpeg/build/android/arm64-v8a`
-- `FFMPEG_ROOT_*` 指向包含 `include/` 与 `lib/` 的安装前缀，CMake 会链接 `avformat avcodec avutil swresample swscale`。
+- 默认 `SW_ENABLE_FFMPEG=ON`，优先使用 FFmpeg 解码；若 FFmpeg 无法打开，则自动回退到桩实现。
+- 路径配置示例（需包含 `include/` 与 `lib/`）：
+  - 桌面：`-DFFMPEG_ROOT_DESKTOP=/Users/gengqifu/git/ext/SoundWave/ffmpeg/build/desktop`（默认值）
+  - iOS：`-DFFMPEG_ROOT_IOS=/Users/gengqifu/git/ext/SoundWave/ffmpeg/build/ios/arm64`
+  - Android：`-DFFMPEG_ROOT_ANDROID=/Users/gengqifu/git/ext/SoundWave/ffmpeg/build/android/arm64-v8a`
+- 链接库：`avformat avcodec avutil swresample swscale`；macOS 需额外链接 Security/CoreFoundation/CoreVideo/VideoToolbox/AudioToolbox/CoreMedia/AVFoundation/iconv/z/bz2。
