@@ -23,3 +23,11 @@
   - `ABI`（Android）：`arm64-v8a` / `armeabi-v7a` / `x86_64`。
 - 配置特性（默认启用）：解码器 `aac, mp3, flac, pcm_s16le, pcm_f32le`；demuxer `mov, mp3, aac, flac, wav`；protocol `file, http, https`；静态库 + PIC，关闭程序/文档/调试。
 - 运行前如修改了 configure 参数，建议 `make distclean` 清理旧配置。
+
+## CMake 集成 FFmpeg
+
+- 默认 `SW_ENABLE_FFMPEG=OFF`，使用桩实现。启用真实 FFmpeg 时：
+  - 桌面：`-DSW_ENABLE_FFMPEG=ON -DFFMPEG_ROOT_DESKTOP=/path/to/ffmpeg/build/desktop`
+  - iOS：`-DSW_ENABLE_FFMPEG=ON -DFFMPEG_ROOT_IOS=/Users/gengqifu/git/ext/SoundWave/ffmpeg/build/ios/arm64`
+  - Android：`-DSW_ENABLE_FFMPEG=ON -DFFMPEG_ROOT_ANDROID=/Users/gengqifu/git/ext/SoundWave/ffmpeg/build/android/arm64-v8a`
+- `FFMPEG_ROOT_*` 指向包含 `include/` 与 `lib/` 的安装前缀，CMake 会链接 `avformat avcodec avutil swresample swscale`。
