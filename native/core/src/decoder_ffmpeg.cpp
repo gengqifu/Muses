@@ -37,42 +37,52 @@ class DecoderFFmpeg : public Decoder {
       last_status_ = Status::kInvalidArguments;
       return false;
     }
-    fmt_ctx_ = avformat_alloc_context();
-    if (avformat_open_input(&fmt_ctx_, source.c_str(), nullptr, nullptr) < 0) {
+    // Temporary holders to ensure cleanup on failure.
+    AVFormatContext* fmt = avformat_alloc_context();
+    if (avformat_open_input(&fmt, source.c_str(), nullptr, nullptr) < 0) {
+      avformat_free_context(fmt);
       last_status_ = Status::kIoError;
       return false;
     }
-    if (avformat_find_stream_info(fmt_ctx_, nullptr) < 0) {
+    if (avformat_find_stream_info(fmt, nullptr) < 0) {
+      avformat_close_input(&fmt);
       last_status_ = Status::kError;
       return false;
     }
-    audio_stream_idx_ = av_find_best_stream(fmt_ctx_, AVMEDIA_TYPE_AUDIO, -1, -1, nullptr, 0);
-    if (audio_stream_idx_ < 0) {
+    int stream_idx = av_find_best_stream(fmt, AVMEDIA_TYPE_AUDIO, -1, -1, nullptr, 0);
+    if (stream_idx < 0) {
+      avformat_close_input(&fmt);
       last_status_ = Status::kNotSupported;
       return false;
     }
-    AVStream* stream = fmt_ctx_->streams[audio_stream_idx_];
+    AVStream* stream = fmt->streams[stream_idx];
     const AVCodec* codec = avcodec_find_decoder(stream->codecpar->codec_id);
     if (!codec) {
+      avformat_close_input(&fmt);
       last_status_ = Status::kNotSupported;
       return false;
     }
-    codec_ctx_ = avcodec_alloc_context3(codec);
-    if (!codec_ctx_) {
+    AVCodecContext* cctx = avcodec_alloc_context3(codec);
+    if (!cctx) {
+      avformat_close_input(&fmt);
       last_status_ = Status::kError;
       return false;
     }
-    if (avcodec_parameters_to_context(codec_ctx_, stream->codecpar) < 0) {
+    if (avcodec_parameters_to_context(cctx, stream->codecpar) < 0) {
+      avcodec_free_context(&cctx);
+      avformat_close_input(&fmt);
       last_status_ = Status::kError;
       return false;
     }
-    if (avcodec_open2(codec_ctx_, codec, nullptr) < 0) {
+    if (avcodec_open2(cctx, codec, nullptr) < 0) {
+      avcodec_free_context(&cctx);
+      avformat_close_input(&fmt);
       last_status_ = Status::kError;
       return false;
     }
     // Configure output.
-    sample_rate_ = target_sample_rate_ > 0 ? target_sample_rate_ : codec_ctx_->sample_rate;
-    channels_ = target_channels_ > 0 ? target_channels_ : codec_ctx_->ch_layout.nb_channels;
+    sample_rate_ = target_sample_rate_ > 0 ? target_sample_rate_ : cctx->sample_rate;
+    channels_ = target_channels_ > 0 ? target_channels_ : cctx->ch_layout.nb_channels;
     if (channels_ == 0) {
       channels_ = 2;
     }
@@ -80,21 +90,46 @@ class DecoderFFmpeg : public Decoder {
     AVChannelLayout out_layout;
     av_channel_layout_default(&out_layout, channels_);
     AVSampleFormat out_fmt = AV_SAMPLE_FMT_FLT;
-    if (swr_alloc_set_opts2(&swr_ctx_, &out_layout, out_fmt, sample_rate_, &codec_ctx_->ch_layout,
-                            codec_ctx_->sample_fmt, codec_ctx_->sample_rate, 0, nullptr) < 0) {
+    SwrContext* swr = nullptr;
+    if (swr_alloc_set_opts2(&swr,
+                            &out_layout,
+                            out_fmt,
+                            sample_rate_,
+                            &cctx->ch_layout,
+                            cctx->sample_fmt,
+                            cctx->sample_rate,
+                            0,
+                            nullptr) < 0) {
+      avcodec_free_context(&cctx);
+      avformat_close_input(&fmt);
       last_status_ = Status::kError;
       return false;
     }
-    if (!swr_ctx_ || swr_init(swr_ctx_) < 0) {
+    if (!swr || swr_init(swr) < 0) {
+      swr_free(&swr);
+      avcodec_free_context(&cctx);
+      avformat_close_input(&fmt);
       last_status_ = Status::kError;
       return false;
     }
-    frame_ = av_frame_alloc();
-    packet_ = av_packet_alloc();
-    if (!frame_ || !packet_) {
+    AVFrame* frame = av_frame_alloc();
+    AVPacket* packet = av_packet_alloc();
+    if (!frame || !packet) {
+      av_frame_free(&frame);
+      av_packet_free(&packet);
+      swr_free(&swr);
+      avcodec_free_context(&cctx);
+      avformat_close_input(&fmt);
       last_status_ = Status::kError;
       return false;
     }
+    // Success: assign to members.
+    fmt_ctx_ = fmt;
+    codec_ctx_ = cctx;
+    swr_ctx_ = swr;
+    frame_ = frame;
+    packet_ = packet;
+    audio_stream_idx_ = stream_idx;
     opened_ = true;
     last_status_ = Status::kOk;
     return true;
@@ -137,8 +172,12 @@ class DecoderFFmpeg : public Decoder {
       }
 
       // Resample to interleaved float.
-      const int out_samples =
-          swr_get_out_samples(swr_ctx_, frame_->nb_samples > 0 ? frame_->nb_samples : 1024);
+      int64_t delay = swr_get_delay(swr_ctx_, codec_ctx_->sample_rate);
+      int out_samples = swr_get_out_samples(swr_ctx_, frame_->nb_samples);
+      out_samples += av_rescale_rnd(delay, sample_rate_, codec_ctx_->sample_rate, AV_ROUND_UP);
+      if (out_samples <= 0) {
+        out_samples = frame_->nb_samples > 0 ? frame_->nb_samples : 1024;
+      }
       out_buffer.interleaved.resize(static_cast<size_t>(out_samples * channels_));
       uint8_t* out_data[1] = {
           reinterpret_cast<uint8_t*>(out_buffer.interleaved.data()),
