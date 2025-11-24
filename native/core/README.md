@@ -11,3 +11,15 @@
 后续工作（规划）：
 - 实现解码/缓冲/时钟、回调触发，支持 iOS/Android toolchain。
 - 完善状态码/错误枚举和线程安全约束。
+
+## FFmpeg 编译指引（源码位于 `ffmpeg/`）
+
+- iOS（arm64）：`native/core/scripts/build_ffmpeg_ios.sh`，输出到 `ffmpeg/build/ios/arm64`（可调整 `PREFIX`）。
+- Android（arm64-v8a 默认）：设置 `NDK=/path/to/ndk`，运行 `native/core/scripts/build_ffmpeg_android.sh`，输出到 `ffmpeg/build/android/arm64-v8a`（可通过 `ABI` 选择其他架构）。
+- 可调整的配置项：
+  - `FFSRC`：FFmpeg 源码路径（默认 `../ffmpeg`）。
+  - `PREFIX`：安装输出路径。
+  - `API`（Android）：API 级别，默认 24。
+  - `ABI`（Android）：`arm64-v8a` / `armeabi-v7a` / `x86_64`。
+- 配置特性（默认启用）：解码器 `aac, mp3, flac, pcm_s16le, pcm_f32le`；demuxer `mov, mp3, aac, flac, wav`；protocol `file, http, https`；静态库 + PIC，关闭程序/文档/调试。
+- 运行前如修改了 configure 参数，建议 `make distclean` 清理旧配置。
