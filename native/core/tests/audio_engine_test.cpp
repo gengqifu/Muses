@@ -63,4 +63,21 @@ TEST(DecoderStubTest, UnsupportedFormatReturnsFalse) {
   EXPECT_FALSE(dec->Open("file:///tmp/sample.txt"));
 }
 
+TEST(DecoderStubTest, ConfigureOutputChangesReportedFormat) {
+  std::unique_ptr<Decoder> dec = CreateStubDecoder();
+  ASSERT_TRUE(dec->ConfigureOutput(44100, 1));
+  ASSERT_TRUE(dec->Open("file:///tmp/sample.wav"));
+  PcmBuffer buf;
+  EXPECT_FALSE(dec->Read(buf));  // EOF
+  EXPECT_EQ(buf.sample_rate, 44100);
+  EXPECT_EQ(buf.channels, 1);
+  EXPECT_EQ(dec->sample_rate(), 44100);
+  EXPECT_EQ(dec->channels(), 1);
+}
+
+TEST(DecoderStubTest, ConfigureOutputRejectsInvalid) {
+  std::unique_ptr<Decoder> dec = CreateStubDecoder();
+  EXPECT_FALSE(dec->ConfigureOutput(-1, 0));
+}
+
 }  // namespace sw

@@ -21,14 +21,23 @@ class DecoderStub : public Decoder {
       return false;
     }
     out_buffer.interleaved.clear();
-    out_buffer.sample_rate = 48000;
-    out_buffer.channels = 2;
+    out_buffer.sample_rate = sample_rate_;
+    out_buffer.channels = channels_;
     return false;  // EOF immediately.
   }
   void Close() override {}
 
-  int sample_rate() const override { return 48000; }
-  int channels() const override { return 2; }
+  int sample_rate() const override { return sample_rate_; }
+  int channels() const override { return channels_; }
+
+  bool ConfigureOutput(int target_sample_rate, int target_channels) override {
+    if (target_sample_rate <= 0 || target_channels <= 0) {
+      return false;
+    }
+    sample_rate_ = target_sample_rate;
+    channels_ = target_channels;
+    return true;
+  }
 
  private:
   bool IsSupported(const std::string& src) const {
@@ -42,6 +51,8 @@ class DecoderStub : public Decoder {
   }
 
   bool opened_ = false;
+  int sample_rate_ = 48000;
+  int channels_ = 2;
 };
 
 std::unique_ptr<Decoder> CreateStubDecoder() {

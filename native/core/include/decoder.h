@@ -25,6 +25,10 @@ class Decoder {
 
   virtual int sample_rate() const = 0;
   virtual int channels() const = 0;
+
+  // Optional: override output format (e.g., resampler placeholder).
+  // Returns false on invalid arguments; no-op stub will adjust reported format.
+  virtual bool ConfigureOutput(int target_sample_rate, int target_channels) = 0;
 };
 
 std::unique_ptr<Decoder> CreateStubDecoder();
