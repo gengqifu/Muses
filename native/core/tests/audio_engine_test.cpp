@@ -118,4 +118,15 @@ TEST(DecoderStubTest, ConfigureOutputRejectsInvalid) {
   EXPECT_EQ(dec->last_status(), Status::kInvalidArguments);
 }
 
+TEST(DecoderStubTest, RepeatedOpenReadCloseDoesNotCrash) {
+  std::unique_ptr<Decoder> dec = CreateStubDecoder();
+  for (int i = 0; i < 200; ++i) {
+    ASSERT_TRUE(dec->Open("file:///tmp/sample.wav"));
+    PcmBuffer buf;
+    dec->Read(buf);
+    dec->Close();
+  }
+  // No explicit leak check here; test ensures stability across many iterations.
+}
+
 }  // namespace sw
