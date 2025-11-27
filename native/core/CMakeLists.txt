@@ -17,6 +17,7 @@ add_library(soundwave_core STATIC
   src/decoder_stub.cpp
   src/ring_buffer.cpp
   src/playback_thread.cpp
+  src/pcm_throttler.cpp
 )
 target_include_directories(soundwave_core PUBLIC include)
 
@@ -88,6 +89,7 @@ if(SW_BUILD_TESTS AND NOT ANDROID AND NOT IOS)
       tests/audio_engine_test.cpp
       tests/ring_buffer_test.cpp
       tests/playback_thread_test.cpp
+      tests/pcm_throttle_test.cpp
     )
     target_link_libraries(audio_core_tests PRIVATE soundwave_core GTest::gtest_main)
     if(SW_ENABLE_FFMPEG)
