@@ -4,7 +4,7 @@
 在 Flutter 侧实现时域波形绘制组件 `WaveformView`，支持抽稀/缓存，随 PCM 更新渲染，保持性能（TDD）。
 
 ## 测试优先（TDD）
-- ✖ [1] 先编写 Widget/GD 测试：给定固定 PCM 数据，输出与基线截图一致。
+- ✔ [1] 先编写 Widget/GD 测试：给定固定 PCM 数据，输出与基线截图一致。
 - ✖ [2] 设计性能 smoke 用例（profile 模式）监控帧率。
 
 ## 开发任务

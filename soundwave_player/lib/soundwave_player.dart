@@ -9,3 +9,4 @@ export 'src/audio_status_view.dart';
 export 'src/pcm_frame.dart';
 export 'src/pcm_queue.dart';
 export 'src/pcm_buffer.dart';
+export 'src/waveform_view.dart';
