@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import 'pcm_buffer.dart';
 import 'pcm_frame.dart';
 import 'waveform_cache.dart';
 
@@ -11,12 +13,14 @@ class WaveformView extends StatelessWidget {
       required this.frames,
       this.color = Colors.blue,
       this.background,
-      this.cache});
+      this.cache,
+      this.strokeWidth = 1.0});
 
   final List<PcmFrame> frames;
   final Color color;
   final Color? background;
   final WaveformCache? cache;
+  final double strokeWidth;
 
   @override
   Widget build(BuildContext context) {
@@ -28,18 +32,28 @@ class WaveformView extends StatelessWidget {
     }
 
     return CustomPaint(
-      painter: _WaveformPainter(frames, color: color, background: background ?? Colors.black),
+      painter: _WaveformPainter(frames,
+          color: color,
+          background: background ?? Colors.black,
+          strokeWidth: strokeWidth,
+          cache: cache),
       size: const Size(double.infinity, 120),
     );
   }
 }
 
 class _WaveformPainter extends CustomPainter {
-  _WaveformPainter(this.frames, {required this.color, required this.background});
+  _WaveformPainter(this.frames,
+      {required this.color,
+      required this.background,
+      required this.strokeWidth,
+      this.cache});
 
   final List<PcmFrame> frames;
   final Color color;
   final Color background;
+  final double strokeWidth;
+  final WaveformCache? cache;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -50,7 +64,7 @@ class _WaveformPainter extends CustomPainter {
 
     final paint = Paint()
       ..color = color
-      ..strokeWidth = 1.0
+      ..strokeWidth = strokeWidth
       ..style = PaintingStyle.stroke;
 
     final path = Path();
@@ -74,6 +88,10 @@ class _WaveformPainter extends CustomPainter {
     final samples = <double>[];
     for (final f in frames) {
       samples.addAll(f.samples);
+    }
+    if (cache != null) {
+      cache!.addSamples(samples);
+      return cache!.bucketsForWidth(width);
     }
     if (samples.isEmpty) return const [];
     final bucketSize = math.max(1, (samples.length / width).ceil());

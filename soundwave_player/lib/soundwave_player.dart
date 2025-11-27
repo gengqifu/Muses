@@ -11,3 +11,4 @@ export 'src/pcm_queue.dart';
 export 'src/pcm_buffer.dart';
 export 'src/waveform_view.dart';
 export 'src/waveform_cache.dart';
+export 'src/waveform_stream_view.dart';
