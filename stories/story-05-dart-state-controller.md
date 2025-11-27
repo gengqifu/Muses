@@ -8,10 +8,10 @@
 - ✔ [2] Widget/GD 测试：基础控件状态展示正确（可用占位 UI）。
 
 ## 开发任务
-- ✖ [3] 定义 `AudioState` 数据结构（position/duration/isPlaying/buffered/levels/spectrum）。
-- ✖ [4] 编写 Controller（Riverpod/BLoC/Provider 选型）封装插件调用，处理事件流。
-- ✖ [5] 错误映射与用户可读提示。
-- ✖ [6] 基础 UI 状态绑定（不含绘制组件）。
+- ✔ [3] 定义 `AudioState` 数据结构（position/duration/isPlaying/buffered/levels/spectrum）。
+- ✔ [4] 编写 Controller（Riverpod/BLoC/Provider 选型）封装插件调用，处理事件流。
+- ✔ [5] 错误映射与用户可读提示。
+- ✔ [6] 基础 UI 状态绑定（不含绘制组件）。
 
 ## 完成标准（DoD）
-- ✖ [7] `flutter analyze/test` 通过；单测/Widget 测试覆盖主要状态流与错误分支。
+- ✔ [7] `flutter analyze/test` 通过；单测/Widget 测试覆盖主要状态流与错误分支。
