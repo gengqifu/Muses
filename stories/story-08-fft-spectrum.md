@@ -6,7 +6,7 @@
 ## 测试优先（TDD）
 - ✔ [1] 先编写 gtest：单频信号 FFT 频点正确；窗口/重叠配置生效。
 - ✔ [2] Dart Widget/GD 测试：固定谱数据渲染一致。
-- ✖ [3] 性能 smoke 用例：频谱刷新不明显掉帧。
+- ✔ [3] 性能 smoke 用例：频谱刷新不明显掉帧。
 
 ## 开发任务
 - ✖ [4] 原生：窗口化（Hann/Hamming），集成 FFT（KissFFT/vDSP/Android FFT），生成功率谱；配置窗口大小/重叠度。
