@@ -30,7 +30,12 @@ void main() {
     test('init validates config and forwards to platform', () async {
       final player = SoundwavePlayer();
       await player.init(const SoundwaveConfig(
-          sampleRate: 48000, bufferSize: 2048, channels: 2));
+          sampleRate: 48000,
+          bufferSize: 2048,
+          channels: 2,
+          pcmMaxFps: 30,
+          pcmFramesPerPush: 64,
+          pcmMaxPending: 5));
 
       expect(calls, hasLength(1));
       final call = calls.first;
@@ -40,7 +45,12 @@ void main() {
         <String, Object?>{
           'sampleRate': 48000,
           'bufferSize': 2048,
-          'channels': 2
+          'channels': 2,
+          'visualization': <String, Object?>{
+            'pcmMaxFps': 30,
+            'pcmFramesPerPush': 64,
+            'pcmMaxPending': 5,
+          }
         },
       );
     });
