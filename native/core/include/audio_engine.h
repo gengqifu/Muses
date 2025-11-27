@@ -10,6 +10,10 @@ struct AudioConfig {
   int sample_rate = 48000;
   int channels = 2;
   int frames_per_buffer = 0;  // optional override.
+  // PCM 可视化相关配置。
+  int pcm_max_fps = 60;          // 推送频率上限（帧/秒）。
+  int pcm_frames_per_push = 0;   // 每次推送的帧数，0 则使用 frames_per_buffer。
+  size_t pcm_max_pending = 4;    // 限频时最多排队的帧数，超出立即丢弃并标记。
 };
 
 enum class Status {

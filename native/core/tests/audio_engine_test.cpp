@@ -76,6 +76,9 @@ TEST_F(AudioEngineTest, PlayAdvancesPositionCallback) {
   cfg.sample_rate = 48000;
   cfg.channels = 2;
   cfg.frames_per_buffer = 128;
+  cfg.pcm_max_fps = 30;
+  cfg.pcm_frames_per_push = 64;
+  cfg.pcm_max_pending = 2;
   ASSERT_EQ(engine_->Init(cfg), Status::kOk);
   ASSERT_EQ(engine_->Load("file:///tmp/sample.mp3"), Status::kOk);
 

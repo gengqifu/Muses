@@ -1,5 +1,6 @@
 #include "audio_engine.h"
 #include "decoder.h"
+#include "pcm_throttler.h"
 #include "playback_thread.h"
 #include "ring_buffer.h"
 
@@ -42,6 +43,12 @@ class AudioEngineStub : public AudioEngine {
         pos_cb_(pos_ms, pos_ud_);
       }
     });
+    PcmThrottleConfig throttle_cfg;
+    throttle_cfg.max_fps = cfg_.pcm_max_fps;
+    throttle_cfg.max_pending = cfg_.pcm_max_pending;
+    throttler_ = std::make_unique<PcmThrottler>(throttle_cfg);
+    pcm_sequence_.store(0);
+    pcm_timestamp_ms_.store(0);
 
     initialized_ = true;
     loaded_ = false;
@@ -147,6 +154,9 @@ class AudioEngineStub : public AudioEngine {
   std::thread feeder_thread_;
   std::atomic<bool> feeder_running_{false};
   std::atomic<bool> playing_{false};
+  std::unique_ptr<PcmThrottler> throttler_;
+  std::atomic<uint32_t> pcm_sequence_{0};
+  std::atomic<int64_t> pcm_timestamp_ms_{0};
 
   void EnsureDecoder() {
 #ifdef SW_ENABLE_FFMPEG
@@ -183,8 +193,11 @@ class AudioEngineStub : public AudioEngine {
       return;
     }
     feeder_thread_ = std::thread([this]() {
-      const size_t frames = static_cast<size_t>(cfg_.frames_per_buffer);
+      const size_t frames = static_cast<size_t>(
+          cfg_.pcm_frames_per_push > 0 ? cfg_.pcm_frames_per_push : cfg_.frames_per_buffer);
       std::vector<float> silence(frames * static_cast<size_t>(cfg_.channels), 0.0f);
+      const int64_t frame_duration_ms =
+          static_cast<int64_t>((frames * 1000) / static_cast<size_t>(cfg_.sample_rate));
       while (feeder_running_.load()) {
         if (!ring_buffer_) {
           std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -193,7 +206,30 @@ class AudioEngineStub : public AudioEngine {
         size_t wrote = ring_buffer_->Write(silence.data(), frames);
         if (wrote == 0) {
           std::this_thread::sleep_for(std::chrono::milliseconds(1));
+          continue;
         }
+        // 可视化 PCM 推送（交错 float32）。
+        if (pcm_cb_ && throttler_) {
+          PcmThrottleInput in;
+          in.sequence = pcm_sequence_.fetch_add(1) + 1;
+          in.timestamp_ms = pcm_timestamp_ms_.load();
+          in.num_frames = static_cast<int>(frames);
+          in.num_channels = cfg_.channels;
+          auto outs = throttler_->Push(in, in.timestamp_ms);
+          for (const auto& o : outs) {
+            if (o.dropped) {
+              continue;
+            }
+            PcmFrame frame;
+            frame.data = silence.data();
+            frame.num_frames = in.num_frames;
+            frame.num_channels = in.num_channels;
+            frame.sample_rate = cfg_.sample_rate;
+            frame.timestamp_ms = o.timestamp_ms;
+            pcm_cb_(frame, pcm_ud_);
+          }
+        }
+        pcm_timestamp_ms_.fetch_add(frame_duration_ms);
       }
     });
   }
