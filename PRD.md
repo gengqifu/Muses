@@ -69,11 +69,11 @@
 ## 8. 技术与实现约束
 - UI：Flutter 实现；使用自定义绘制组件（CustomPainter）绘制波形/谱。
 - 插件：Flutter plugin 封装 C/C++/平台能力，MethodChannel/PlatformChannel 通信。
-- 音频核心：C/C++，默认 FFmpeg 解码；必要时平台解码器兜底。环形缓冲、窗口化 + FFT（KissFFT/vDSP/Android FFT）；核心算法库跨平台通用，仅在平台层做少量 IO/权限适配。
+- 音频核心：C/C++，默认 FFmpeg 解码；必要时平台解码器兜底。环形缓冲、窗口化 + FFT（KissFFT）；核心算法库跨平台通用，仅在平台层做少量 IO/权限适配。
 - 构建：CMake 管理原生核心；Flutter 构建移动端包。
 
 ## 9. 依赖与外部接口
-- 第三方库：FFmpeg（主要解码后端）、KissFFT/平台 FFT；平台解码器作为可选替代。
+- 第三方库：FFmpeg（主要解码后端）、KissFFT；平台解码器作为可选替代。
 - 系统能力：文件访问、网络请求、音频输出、前后台生命周期。
 - 可选：日志/埋点上报 SDK（MVP 可本地存储或调试输出）。
 
