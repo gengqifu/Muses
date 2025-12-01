@@ -7,7 +7,9 @@
 #include <filesystem>
 #include <fstream>
 #include <memory>
+#include <optional>
 #include <thread>
+#include <vector>
 
 namespace sw {
 
@@ -213,6 +215,68 @@ TEST_F(AudioEngineTest, ShortLoopPerfSmokeStaysNearWallClock) {
 
   const int64_t delta_pos = pos_total - pos_first;
   EXPECT_NEAR(static_cast<double>(delta_pos), 200.0, 150.0);
+}
+
+TEST_F(AudioEngineTest, StateEventsCoverReadyPlayPauseStop) {
+  ASSERT_NE(engine_, nullptr);
+  AudioConfig cfg;
+  cfg.sample_rate = 44100;
+  cfg.channels = 2;
+  ASSERT_EQ(engine_->Init(cfg), Status::kOk);
+
+  std::mutex mu;
+  std::vector<StateEvent> events;
+  auto ctx = std::make_pair(&events, &mu);
+  engine_->SetStateCallback(
+      [](const StateEvent& ev, void* ud) {
+        auto* pair =
+            static_cast<std::pair<std::vector<StateEvent>*, std::mutex*>*>(ud);
+        std::lock_guard<std::mutex> lock(*pair->second);
+        pair->first->push_back(ev);
+      },
+      &ctx);
+
+  ASSERT_EQ(engine_->Load("file:///tmp/sample.mp3"), Status::kOk);
+  ASSERT_EQ(engine_->Play(), Status::kOk);
+  std::this_thread::sleep_for(std::chrono::milliseconds(80));
+  ASSERT_EQ(engine_->Pause(), Status::kOk);
+  ASSERT_EQ(engine_->Stop(), Status::kOk);
+
+  // Allow async callbacks to arrive.
+  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+  auto has_state = [&](PlaybackState state, std::optional<Status> status) {
+    std::lock_guard<std::mutex> lock(mu);
+    for (const auto& ev : events) {
+      if (ev.state == state && (!status.has_value() || ev.status == *status)) return true;
+    }
+    return false;
+  };
+
+  EXPECT_TRUE(has_state(PlaybackState::kReady, Status::kOk));
+  EXPECT_TRUE(has_state(PlaybackState::kPlaying, Status::kOk));
+  EXPECT_TRUE(has_state(PlaybackState::kPaused, Status::kOk));
+  EXPECT_TRUE(has_state(PlaybackState::kStopped, Status::kOk));
+}
+
+TEST_F(AudioEngineTest, LoadErrorEmitsStateWithStatus) {
+  ASSERT_NE(engine_, nullptr);
+  AudioConfig cfg;
+  cfg.sample_rate = 48000;
+  cfg.channels = 2;
+  ASSERT_EQ(engine_->Init(cfg), Status::kOk);
+
+  StateEvent last{PlaybackState::kIdle, Status::kOk};
+  engine_->SetStateCallback(
+      [](const StateEvent& ev, void* ud) { *static_cast<StateEvent*>(ud) = ev; }, &last);
+
+  EXPECT_EQ(engine_->Load("file:///tmp/missing.mp3"), Status::kIoError);
+  EXPECT_EQ(last.status, Status::kIoError);
+  EXPECT_EQ(last.state, PlaybackState::kIdle);
+
+  EXPECT_EQ(engine_->Load("file:///tmp/sample.txt"), Status::kNotSupported);
+  EXPECT_EQ(last.status, Status::kNotSupported);
+  EXPECT_EQ(last.state, PlaybackState::kIdle);
 }
 
 TEST_F(AudioEngineTest, SeekClearsBufferAndResetsClocks) {

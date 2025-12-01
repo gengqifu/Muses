@@ -63,6 +63,8 @@ class AudioEngineStub : public AudioEngine {
 
     initialized_ = true;
     loaded_ = false;
+    eof_emitted_.store(false);
+    playback_state_ = PlaybackState::kInitialized;
     return Status::kOk;
   }
   Status Load(const std::string& source) override {
@@ -70,8 +72,10 @@ class AudioEngineStub : public AudioEngine {
       return Status::kInvalidState;
     }
     if (source.empty()) {
+      EmitState(PlaybackState::kIdle, Status::kInvalidArguments);
       return Status::kInvalidArguments;
     }
+    eof_emitted_.store(false);
     EnsureDecoder();
     if (!decoder_->Open(source)) {
 #ifdef SW_ENABLE_FFMPEG
@@ -83,9 +87,12 @@ class AudioEngineStub : public AudioEngine {
 #endif
     }
     if (decoder_ && !decoder_->Open(source)) {
+      EmitState(PlaybackState::kIdle, decoder_->last_status());
       return decoder_->last_status();
     }
     loaded_ = true;
+    playback_state_ = PlaybackState::kReady;
+    EmitState(PlaybackState::kReady, Status::kOk);
     return Status::kOk;
   }
   Status Play() override {
@@ -100,7 +107,8 @@ class AudioEngineStub : public AudioEngine {
       playback_thread_->Start();
     }
     playing_ = true;
-    EmitState(PlaybackState::kPlaying, Status::kOk);
+    playback_state_ = PlaybackState::kPlaying;
+    EmitState(playback_state_, Status::kOk);
     return Status::kOk;
   }
   Status Pause() override {
@@ -108,7 +116,8 @@ class AudioEngineStub : public AudioEngine {
       return Status::kInvalidState;
     }
     StopPlayback();
-    EmitState(PlaybackState::kPaused, Status::kOk);
+    playback_state_ = PlaybackState::kPaused;
+    EmitState(playback_state_, Status::kOk);
     return Status::kOk;
   }
   Status Stop() override {
@@ -122,7 +131,9 @@ class AudioEngineStub : public AudioEngine {
     if (playback_thread_) {
       playback_thread_->ResetPosition(0);
     }
-    EmitState(PlaybackState::kStopped, Status::kOk);
+    eof_emitted_.store(false);
+    playback_state_ = PlaybackState::kStopped;
+    EmitState(playback_state_, Status::kOk);
     return Status::kOk;
   }
   Status Seek(int64_t position_ms) override {
@@ -138,6 +149,7 @@ class AudioEngineStub : public AudioEngine {
     pcm_timestamp_ms_.store(position_ms);
     pcm_sequence_.store(0);
     spectrum_sequence_.store(0);
+    eof_emitted_.store(false);
     if (throttler_) {
       throttler_->Reset();
     }
@@ -177,6 +189,7 @@ class AudioEngineStub : public AudioEngine {
   int last_sample_rate_ = 48000;
   int last_channels_ = 2;
   AudioConfig cfg_;
+  PlaybackState playback_state_ = PlaybackState::kIdle;
   std::unique_ptr<Decoder> decoder_;
   std::unique_ptr<RingBuffer> ring_buffer_;
   std::unique_ptr<PlaybackThread> playback_thread_;
@@ -188,6 +201,7 @@ class AudioEngineStub : public AudioEngine {
   std::atomic<uint32_t> pcm_sequence_{0};
   std::atomic<int64_t> pcm_timestamp_ms_{0};
   std::atomic<uint32_t> spectrum_sequence_{0};
+  std::atomic<bool> eof_emitted_{false};
 
   void EnsureDecoder() {
 #ifdef SW_ENABLE_FFMPEG
@@ -240,9 +254,14 @@ class AudioEngineStub : public AudioEngine {
         if (!has_frame) {
           if (decoder_->last_status() != Status::kOk) {
             feeder_running_.store(false);
+            playing_.store(false);
+            EmitState(PlaybackState::kStopped, decoder_->last_status());
             break;
           }
-          // Stub/EOF：回退填充静音以驱动时钟。
+          // EOF：发出结束事件，但仍填充静音以维持时钟推进。
+          if (!eof_emitted_.exchange(true)) {
+            EmitState(PlaybackState::kStopped, Status::kOk);
+          }
           pcm_buffer.sample_rate = cfg_.sample_rate;
           pcm_buffer.channels = cfg_.channels;
           pcm_buffer.interleaved.assign(target_frames * static_cast<size_t>(cfg_.channels), 0.0f);
