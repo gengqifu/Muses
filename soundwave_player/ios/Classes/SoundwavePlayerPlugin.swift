@@ -12,6 +12,8 @@ public class SoundwavePlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
   private var statusObserver: NSKeyValueObservation?
   private var timeControlObserver: NSKeyValueObservation?
   private var itemLoadedObserver: NSKeyValueObservation?
+  private var interruptionObserver: NSObjectProtocol?
+  private var routeObserver: NSObjectProtocol?
 
   public static func register(with registrar: FlutterPluginRegistrar) {
     let instance = SoundwavePlayerPlugin()
@@ -61,6 +63,8 @@ public class SoundwavePlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
     stop()
     player = AVPlayer()
     player?.automaticallyWaitsToMinimizeStalling = true
+    configureAudioSession()
+    registerNotifications()
 
     timeControlObserver = player?.observe(\.timeControlStatus, options: [.new]) { [weak self] player, change in
       guard let self = self else { return }
@@ -152,6 +156,14 @@ public class SoundwavePlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
     statusObserver = nil
     timeControlObserver = nil
     itemLoadedObserver = nil
+    if let obs = interruptionObserver {
+      NotificationCenter.default.removeObserver(obs)
+      interruptionObserver = nil
+    }
+    if let obs = routeObserver {
+      NotificationCenter.default.removeObserver(obs)
+      routeObserver = nil
+    }
     player?.pause()
     player?.replaceCurrentItem(with: nil)
   }
@@ -169,6 +181,62 @@ public class SoundwavePlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
 
   private static let methodChannelName = "soundwave_player"
   private static let eventPrefix = "soundwave_player/events"
+}
+
+// MARK: - Audio session & notifications
+extension SoundwavePlayerPlugin {
+  private func configureAudioSession() {
+    let session = AVAudioSession.sharedInstance()
+    do {
+      try session.setCategory(.playback,
+                              mode: .default,
+                              options: [.allowAirPlay, .allowBluetooth, .mixWithOthers])
+      try session.setActive(true)
+    } catch {
+      emitState(["type": "error", "message": "AudioSession failed: \(error.localizedDescription)"])
+    }
+  }
+
+  private func registerNotifications() {
+    interruptionObserver = NotificationCenter.default.addObserver(
+      forName: AVAudioSession.interruptionNotification, object: nil, queue: .main
+    ) { [weak self] note in
+      self?.handleInterruption(note)
+    }
+    routeObserver = NotificationCenter.default.addObserver(
+      forName: AVAudioSession.routeChangeNotification, object: nil, queue: .main
+    ) { [weak self] note in
+      guard let self = self,
+            let reasonValue = note.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt,
+            let reason = AVAudioSession.RouteChangeReason(rawValue: reasonValue) else { return }
+      if reason == .oldDeviceUnavailable {
+        self.emitState(["type": "focusLost", "message": "Audio route changed"])
+      }
+    }
+  }
+
+  private func handleInterruption(_ notification: Notification) {
+    guard let info = notification.userInfo,
+          let typeValue = info[AVAudioSessionInterruptionTypeKey] as? UInt,
+          let type = AVAudioSession.InterruptionType(rawValue: typeValue) else { return }
+    switch type {
+    case .began:
+      emitState(["type": "focusLost", "message": "Audio interrupted"])
+    case .ended:
+      let shouldResume = (info[AVAudioSessionInterruptionOptionKey] as? UInt).map {
+        AVAudioSession.InterruptionOptions(rawValue: $0).contains(.shouldResume)
+      } ?? false
+      if shouldResume {
+        emitState([
+          "type": "resumedFromBackground",
+          "positionMs": player?.currentPositionMs ?? 0,
+          "bufferedMs": player?.currentItem?.bufferedPositionMs ?? 0
+        ])
+      }
+    @unknown default:
+      break
+    }
+  }
 }
 
 private extension CMTime {

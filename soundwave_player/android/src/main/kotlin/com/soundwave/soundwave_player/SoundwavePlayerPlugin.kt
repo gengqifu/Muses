@@ -1,6 +1,7 @@
 package com.soundwave.soundwave_player
 
 import android.content.Context
+import android.media.AudioManager
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
@@ -16,7 +17,8 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 import java.util.concurrent.ConcurrentHashMap
 
-class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler, EventChannel.StreamHandler {
+class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler, EventChannel.StreamHandler,
+    AudioManager.OnAudioFocusChangeListener {
     private lateinit var context: Context
     private lateinit var methodChannel: MethodChannel
     private lateinit var stateChannel: EventChannel
@@ -25,6 +27,8 @@ class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler, EventChannel.Str
     private var player: ExoPlayer? = null
     private var httpFactory: DefaultHttpDataSource.Factory? = null
     private var headers: Map<String, String> = emptyMap()
+    private var audioManager: AudioManager? = null
+    private var hasFocus: Boolean = false
 
     override fun onAttachedToEngine(binding: FlutterPluginBinding) {
         context = binding.applicationContext
@@ -33,6 +37,8 @@ class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler, EventChannel.Str
 
         stateChannel = EventChannel(binding.binaryMessenger, "$EVENT_PREFIX/state")
         stateChannel.setStreamHandler(this)
+
+        audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     }
 
     override fun onDetachedFromEngine(binding: FlutterPluginBinding) {
@@ -72,6 +78,7 @@ class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler, EventChannel.Str
 
     private fun initPlayer(call: MethodCall, result: Result) {
         releasePlayer()
+        abandonFocus()
         val config = call.arguments as? Map<*, *> ?: emptyMap<String, Any?>()
         val network = config["network"] as? Map<*, *>
         val connectTimeout =
@@ -185,6 +192,7 @@ class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler, EventChannel.Str
         }
         exo.setMediaSource(mediaSource)
         exo.prepare()
+        requestFocus()
         emitState(mapOf("type" to "state", "isPlaying" to false, "bufferedMs" to 0))
         result.success(null)
     }
@@ -196,6 +204,49 @@ class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler, EventChannel.Str
     private fun releasePlayer() {
         player?.release()
         player = null
+    }
+
+    // Audio focus
+    private fun requestFocus() {
+        val am = audioManager ?: return
+        val result = am.requestAudioFocus(
+            { focusChange -> onAudioFocusChange(focusChange) },
+            AudioManager.STREAM_MUSIC,
+            AudioManager.AUDIOFOCUS_GAIN
+        )
+        hasFocus = result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
+    }
+
+    private fun abandonFocus() {
+        audioManager?.abandonAudioFocus(this)
+        hasFocus = false
+    }
+
+    override fun onAudioFocusChange(focusChange: Int) {
+        when (focusChange) {
+            AudioManager.AUDIOFOCUS_LOSS -> {
+                player?.pause()
+                emitState(mapOf("type" to "focusLost", "message" to "Audio focus lost"))
+            }
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
+                player?.pause()
+                emitState(mapOf("type" to "focusLost", "message" to "Audio focus transient loss"))
+            }
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+                player?.volume = 0.2f
+                emitState(mapOf("type" to "focusLost", "message" to "Ducking"))
+            }
+            AudioManager.AUDIOFOCUS_GAIN -> {
+                player?.volume = 1.0f
+                emitState(
+                    mapOf(
+                        "type" to "resumedFromBackground",
+                        "positionMs" to (player?.currentPosition ?: 0),
+                        "bufferedMs" to (player?.bufferedPosition ?: 0)
+                    )
+                )
+            }
+        }
     }
 
     override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
