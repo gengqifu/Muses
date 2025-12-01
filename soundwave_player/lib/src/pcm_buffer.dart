@@ -22,6 +22,7 @@ class PcmBuffer {
   int _droppedFromStream = 0;
   int _lastTimestampMs = -1;
   int _version = 0;
+  bool _paused = false;
 
   void _handleEvent(dynamic event) {
     if (event is! Map) return;
@@ -54,11 +55,25 @@ class PcmBuffer {
 
   /// 限量取出帧，并合并流侧与队列侧的丢弃计数。
   PcmPullResult drain(int maxCount) {
+    if (_paused) {
+      return const PcmPullResult(<PcmFrame>[], droppedBefore: 0);
+    }
     final res = _queue.take(maxCount);
     final totalDropped = res.droppedBefore + _droppedFromStream;
     _droppedFromStream = 0;
     return PcmPullResult(res.frames, droppedBefore: totalDropped);
   }
+
+  void pause() {
+    _paused = true;
+    reset();
+  }
+
+  void resume() {
+    _paused = false;
+  }
+
+  bool get paused => _paused;
 
   void reset() {
     _queue.clear();

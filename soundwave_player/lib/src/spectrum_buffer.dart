@@ -22,6 +22,7 @@ class SpectrumBuffer {
   int _droppedFromStream = 0;
   int _lastTimestampMs = -1;
   int _version = 0;
+  bool _paused = false;
 
   void _handleEvent(dynamic event) {
     if (event is! Map) return;
@@ -53,11 +54,25 @@ class SpectrumBuffer {
   }
 
   SpectrumPullResult drain(int maxCount) {
+    if (_paused) {
+      return const SpectrumPullResult(<SpectrumFrame>[], droppedBefore: 0);
+    }
     final res = _queue.take(maxCount);
     final totalDropped = res.droppedBefore + _droppedFromStream;
     _droppedFromStream = 0;
     return SpectrumPullResult(res.frames, droppedBefore: totalDropped);
   }
+
+  void pause() {
+    _paused = true;
+    reset();
+  }
+
+  void resume() {
+    _paused = false;
+  }
+
+  bool get paused => _paused;
 
   void reset() {
     _queue.clear();

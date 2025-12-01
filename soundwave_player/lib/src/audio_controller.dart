@@ -162,6 +162,8 @@ class AudioController {
         isBuffering: true,
         error: message,
       ));
+      _pcmBuffer?.pause();
+      _spectrumBuffer?.pause();
     } else if (type == 'resumedFromBackground') {
       _emit(_state.copyWith(
         isPlaying: true,
@@ -171,6 +173,8 @@ class AudioController {
             _parseDuration(event['bufferedMs'], _state.bufferedPosition ?? Duration.zero),
         error: null,
       ));
+      _pcmBuffer?.resume();
+      _spectrumBuffer?.resume();
     } else if (type == 'resumed') {
       _emit(_state.copyWith(
         isBuffering: false,
