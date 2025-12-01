@@ -14,6 +14,8 @@ public class SoundwavePlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
   private var itemLoadedObserver: NSKeyValueObservation?
   private var interruptionObserver: NSObjectProtocol?
   private var routeObserver: NSObjectProtocol?
+  private var backgroundObserver: NSObjectProtocol?
+  private var foregroundObserver: NSObjectProtocol?
 
   public static func register(with registrar: FlutterPluginRegistrar) {
     let instance = SoundwavePlayerPlugin()
@@ -164,6 +166,14 @@ public class SoundwavePlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
       NotificationCenter.default.removeObserver(obs)
       routeObserver = nil
     }
+    if let obs = backgroundObserver {
+      NotificationCenter.default.removeObserver(obs)
+      backgroundObserver = nil
+    }
+    if let obs = foregroundObserver {
+      NotificationCenter.default.removeObserver(obs)
+      foregroundObserver = nil
+    }
     player?.pause()
     player?.replaceCurrentItem(with: nil)
   }
@@ -212,6 +222,24 @@ extension SoundwavePlayerPlugin {
       if reason == .oldDeviceUnavailable {
         self.emitState(["type": "focusLost", "message": "Audio route changed"])
       }
+    }
+    backgroundObserver = NotificationCenter.default.addObserver(
+      forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: .main
+    ) { [weak self] _ in
+      self?.emitState([
+        "type": "focusLost",
+        "message": "App entered background"
+      ])
+    }
+    foregroundObserver = NotificationCenter.default.addObserver(
+      forName: UIApplication.willEnterForegroundNotification, object: nil, queue: .main
+    ) { [weak self] _ in
+      guard let self = self else { return }
+      self.emitState([
+        "type": "resumedFromBackground",
+        "positionMs": self.player?.currentPositionMs ?? 0,
+        "bufferedMs": self.player?.currentItem?.bufferedPositionMs ?? 0
+      ])
     }
   }
 
