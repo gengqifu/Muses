@@ -5,7 +5,7 @@
 
 ## 测试优先（TDD）
 - ✔ [1] 先编写性能测试脚本：本地播放采集延迟、帧率、CPU/内存基线（Flutter devtools / native trace），流式待 Story10。
-- ✖ [2] 长时间播放稳定性用例（≥2h）规划与自动化（可手动触发）。
+- ✔ [2] 长时间播放稳定性用例（≥2h）规划与自动化（可手动触发）。
 
 ## 开发任务
 - ✖ [3] 添加采样点：解码→缓冲→回放→UI 显示延迟，帧率统计，CPU/内存监控（Flutter DevTools/profile build + native trace）。
