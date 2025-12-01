@@ -132,6 +132,18 @@ class AudioEngineStub : public AudioEngine {
     if (position_ms < 0) {
       return Status::kInvalidArguments;
     }
+    if (ring_buffer_) {
+      ring_buffer_->Clear();
+    }
+    pcm_timestamp_ms_.store(position_ms);
+    pcm_sequence_.store(0);
+    spectrum_sequence_.store(0);
+    if (throttler_) {
+      throttler_->Reset();
+    }
+    if (spectrum_throttler_) {
+      spectrum_throttler_->Reset();
+    }
     if (playback_thread_) {
       playback_thread_->ResetPosition(position_ms);
     }

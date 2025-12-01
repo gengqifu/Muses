@@ -215,6 +215,59 @@ TEST_F(AudioEngineTest, ShortLoopPerfSmokeStaysNearWallClock) {
   EXPECT_NEAR(static_cast<double>(delta_pos), 200.0, 150.0);
 }
 
+TEST_F(AudioEngineTest, SeekClearsBufferAndResetsClocks) {
+  ASSERT_NE(engine_, nullptr);
+  AudioConfig cfg;
+  cfg.sample_rate = 48000;
+  cfg.channels = 2;
+  cfg.frames_per_buffer = 240;  // 5ms-ish to generate more callbacks.
+  cfg.pcm_max_fps = 120;
+  cfg.pcm_frames_per_push = 120;
+  ASSERT_EQ(engine_->Init(cfg), Status::kOk);
+  ASSERT_EQ(engine_->Load("file:///tmp/sample.mp3"), Status::kOk);
+
+  std::atomic<int64_t> last_pcm_ts{-1};
+  std::atomic<int> pcm_calls{0};
+  auto ctx = std::make_pair(&last_pcm_ts, &pcm_calls);
+  engine_->SetPcmCallback(
+      [](const PcmFrame& frame, void* ud) {
+        auto* pair =
+            static_cast<std::pair<std::atomic<int64_t>*, std::atomic<int>*>*>(ud);
+        pair->first->store(frame.timestamp_ms);
+        pair->second->fetch_add(1);
+      },
+      &ctx);
+
+  ASSERT_EQ(engine_->Play(), Status::kOk);
+  std::this_thread::sleep_for(std::chrono::milliseconds(150));
+  ASSERT_EQ(engine_->Pause(), Status::kOk);
+
+  const int64_t before_seek_ts = last_pcm_ts.load();
+  EXPECT_GE(before_seek_ts, 0);
+
+  last_pcm_ts.store(-1);
+  pcm_calls.store(0);
+
+  ASSERT_EQ(engine_->Seek(800), Status::kOk);
+  ASSERT_EQ(engine_->Play(), Status::kOk);
+
+  bool got_pcm = false;
+  for (int i = 0; i < 80; ++i) {
+    if (pcm_calls.load() > 0) {
+      got_pcm = true;
+      break;
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  ASSERT_TRUE(got_pcm);
+
+  const int64_t after_seek_ts = last_pcm_ts.load();
+  EXPECT_GT(after_seek_ts, before_seek_ts);
+  EXPECT_GE(after_seek_ts, 750);      // should jump near the seek target.
+  EXPECT_LT(after_seek_ts, 1100);     // not excessively ahead.
+  EXPECT_NEAR(after_seek_ts, 800, 300);  // loose guard for stub pacing.
+}
+
 TEST(DecoderStubTest, OpenAndRead) {
   std::unique_ptr<Decoder> dec = CreateStubDecoder();
   ASSERT_TRUE(dec->Open("file:///tmp/sample.mp3"));
