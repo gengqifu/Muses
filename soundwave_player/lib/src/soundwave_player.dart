@@ -44,8 +44,13 @@ class SoundwavePlayer {
     if (source.trim().isEmpty) {
       throw ArgumentError.value(source, 'source', 'cannot be empty');
     }
+    // allow http/https/file/relative paths for backward compatibility.
     final uri = Uri.tryParse(source);
-    if (uri == null || !(uri.isScheme('http') || uri.isScheme('https') || uri.isScheme('file'))) {
+    if (uri == null ||
+        (!uri.isScheme('http') &&
+            !uri.isScheme('https') &&
+            !uri.isScheme('file') &&
+            uri.scheme.isNotEmpty)) {
       throw ArgumentError.value(source, 'source', 'unsupported scheme');
     }
     if (rangeStart != null && rangeStart < 0) {

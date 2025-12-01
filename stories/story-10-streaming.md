@@ -9,7 +9,7 @@
 - ✔ [3] 性能 smoke：流式播放波形/谱刷新无明显掉帧。
 
 ## 开发任务
-- ✖ [4] 拉流输入：支持 HTTP/HTTPS，预留 headers、连接/读超时参数，必要时 Range/断点续播占位。
+- ✖ [4] 拉流输入：Android 用 Media3 (ExoPlayer)，iOS 用 AVPlayer；支持 HTTP/HTTPS，预留 headers、连接/读超时参数，必要时 Range/断点续播占位。
 - ✖ [5] 缓冲策略：上报 bufferedPosition/进度，初始连接超时、卡顿检测、重试退避（含最大重试），弱网提示不崩溃。
 - ✖ [6] 事件：缓冲开始/结束、卡顿、重试、错误（含 HTTP 状态/超时/解码）上报到 Dart；UI 有占位/提示，音频时钟恢复后校正 position。
 - ✖ [7] 与节流/波形/频谱链路兼容：stall/resume 后限速推送，避免积压爆发；保持时间基连续。
