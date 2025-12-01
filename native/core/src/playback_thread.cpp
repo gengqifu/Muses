@@ -48,6 +48,7 @@ void PlaybackThread::ThreadMain() {
   local.resize(static_cast<size_t>(cfg_.frames_per_buffer * cfg_.channels));
   const int sample_rate = cfg_.sample_rate;
   const int frames_per_buffer = cfg_.frames_per_buffer;
+  auto next_deadline = std::chrono::steady_clock::now();
 
   while (running_.load()) {
     size_t frames = buffer_.Read(local.data(), static_cast<size_t>(frames_per_buffer));
@@ -55,8 +56,11 @@ void PlaybackThread::ThreadMain() {
       std::this_thread::sleep_for(std::chrono::milliseconds(1));
       continue;
     }
-    // Advance clock.
-    int64_t delta_ms = static_cast<int64_t>(frames * 1000 / sample_rate);
+    // Advance clock based on consumed frames to mimic real-time pacing.
+    const int64_t delta_ms = static_cast<int64_t>(frames * 1000 / sample_rate);
+    const auto delta_ns = std::chrono::nanoseconds(static_cast<int64_t>(
+        (1000000000LL * static_cast<int64_t>(frames)) / static_cast<int64_t>(sample_rate)));
+    next_deadline += delta_ns;
     int64_t now = position_ms_.fetch_add(delta_ms) + delta_ms;
     // Notify callback.
     std::function<void(int64_t)> cb_copy;
@@ -66,6 +70,12 @@ void PlaybackThread::ThreadMain() {
     }
     if (cb_copy) {
       cb_copy(now);
+    }
+    const auto sleep_for = next_deadline - std::chrono::steady_clock::now();
+    if (sleep_for > std::chrono::nanoseconds::zero()) {
+      std::this_thread::sleep_for(sleep_for);
+    } else {
+      std::this_thread::yield();
     }
   }
 }

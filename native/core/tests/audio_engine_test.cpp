@@ -169,6 +169,52 @@ TEST_F(AudioEngineTest, PlayPauseSeekStayInSyncWithinTolerance) {
   EXPECT_TRUE(reached_target);
 }
 
+TEST_F(AudioEngineTest, ShortLoopPerfSmokeStaysNearWallClock) {
+  ASSERT_NE(engine_, nullptr);
+  AudioConfig cfg;
+  cfg.sample_rate = 48000;
+  cfg.channels = 2;
+  cfg.frames_per_buffer = 480;  // ~10ms buffers for stable pacing.
+  ASSERT_EQ(engine_->Init(cfg), Status::kOk);
+  ASSERT_EQ(engine_->Load("file:///tmp/sample.mp3"), Status::kOk);
+
+  std::atomic<int64_t> last_pos{-1};
+  engine_->SetPositionCallback(
+      [](int64_t pos, void* ud) {
+        auto* p = static_cast<std::atomic<int64_t>*>(ud);
+        p->store(pos);
+      },
+      &last_pos);
+
+  const auto start = std::chrono::steady_clock::now();
+  ASSERT_EQ(engine_->Play(), Status::kOk);
+  std::this_thread::sleep_for(std::chrono::milliseconds(400));
+  ASSERT_EQ(engine_->Pause(), Status::kOk);
+
+  const auto wall_ms_first =
+      std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() -
+                                                            start)
+          .count();
+  const int64_t pos_first = last_pos.load();
+  EXPECT_GT(pos_first, 0);
+  EXPECT_NEAR(static_cast<double>(pos_first), static_cast<double>(wall_ms_first), 150.0);
+
+  ASSERT_EQ(engine_->Play(), Status::kOk);
+  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+  ASSERT_EQ(engine_->Pause(), Status::kOk);
+
+  const auto wall_ms_total =
+      std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() -
+                                                            start)
+          .count();
+  const int64_t pos_total = last_pos.load();
+  EXPECT_GT(pos_total, pos_first);
+  EXPECT_NEAR(static_cast<double>(pos_total), static_cast<double>(wall_ms_total), 200.0);
+
+  const int64_t delta_pos = pos_total - pos_first;
+  EXPECT_NEAR(static_cast<double>(delta_pos), 200.0, 150.0);
+}
+
 TEST(DecoderStubTest, OpenAndRead) {
   std::unique_ptr<Decoder> dec = CreateStubDecoder();
   ASSERT_TRUE(dec->Open("file:///tmp/sample.mp3"));
