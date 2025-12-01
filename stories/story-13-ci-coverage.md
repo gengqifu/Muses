@@ -10,7 +10,7 @@
 ## 开发任务
 - ✔ [3] CI 配置（GitHub Actions）：Flutter analyze/test（跳过 Story10 流式用例）、CMake+gtest、clang-format/dart format 检查，缓存 Flutter/.pub-cache/CMake（见 `.github/workflows/ci.yaml`）。
 - ✔ [4] 覆盖率收集：Dart 覆盖率（lcov，见 `scripts/ci_coverage.sh`），C++ 覆盖率（lcov/llvm-cov 占位，CI 先允许失败），可选合并报告；先设置阈值占位（如 Dart ≥60%，C++ 暂允许失败）。
-- ✖ [5] 阈值：设定最低覆盖率（可逐步收紧），未达则失败；构建缓存优化。
+- ✔ [5] 阈值：设定最低覆盖率（先占位 Dart ≥60%，C++ 暂允许失败），未达则失败；构建缓存优化（Flutter/.pub-cache/CMake 缓存已启用）。
 
 ## 完成标准（DoD）
 - ✖ [6] CI 绿，失败条件验证通过（本地或手动触发）。
