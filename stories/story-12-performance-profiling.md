@@ -8,7 +8,7 @@
 - ✔ [2] 长时间播放稳定性用例（≥2h）规划与自动化（可手动触发）。
 
 ## 开发任务
-- ✖ [3] 添加采样点：解码→缓冲→回放→UI 显示延迟，帧率统计，CPU/内存监控（Flutter DevTools/profile build + native trace）。
+- ✔ [3] 添加采样点：解码→缓冲→回放→UI 显示延迟，帧率统计，CPU/内存监控（Flutter DevTools/profile build + native trace）。采样点详见 `soundwave_player/scripts/trace_points.md`。
 - ✖ [4] 参数化：节流、缓冲时长、FFT 配置可调；探索合理默认值并记录。
 - ✖ [5] 优化：内存复用，回调轻量化，必要时降级帧率；后台暂停策略不计入前台性能。
 - ✖ [6] 日志/导出：性能日志可导出/调试查看（profile 包/文本导出）。
