@@ -11,7 +11,7 @@
 - ✔ [3] README：特性列表、安装、平台要求、快速开始代码片段、已知限制（注明流式暂缓）。
 - ✖ [4] Demo 页面：完整 UI（播放控制、文件/URL 输入、波形/频谱展示），可运行。
 - ✔ [5] 截图/说明：关键界面、配置示例（文字占位，见 `soundwave_player/docs/demo_notes.md`，截图待 UI 稳定后补充）。
-- ✖ [6] Changelog/Release note 雏形。
+- ✔ [6] Changelog/Release note 雏形（见 `CHANGELOG.md` 草稿）。
 
 ## 完成标准（DoD）
 - ✖ [7] Demo 在支持平台编译运行，功能与文档一致。
