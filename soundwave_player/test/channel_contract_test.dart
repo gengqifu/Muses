@@ -37,7 +37,10 @@ void main() {
           pcmFramesPerPush: 64,
           pcmMaxPending: 5,
           spectrumMaxFps: 20,
-          spectrumMaxPending: 3));
+          spectrumMaxPending: 3,
+          connectTimeoutMs: 3000,
+          readTimeoutMs: 5000,
+          enableRangeRequests: true));
 
       expect(calls, hasLength(1));
       final call = calls.first;
@@ -54,6 +57,11 @@ void main() {
             'pcmMaxPending': 5,
             'spectrumMaxFps': 20,
             'spectrumMaxPending': 3,
+          },
+          'network': <String, Object?>{
+            'connectTimeoutMs': 3000,
+            'readTimeoutMs': 5000,
+            'enableRangeRequests': true,
           }
         },
       );
@@ -108,17 +116,19 @@ void main() {
       );
     });
 
-    test('load forwards args', () async {
+    test('load forwards args with headers and range', () async {
       final player = SoundwavePlayer();
       await player.init(const SoundwaveConfig(
           sampleRate: 48000, bufferSize: 2048, channels: 2));
-      await player.load('file://sample', headers: {'token': 'abc'});
+      await player.load('https://example.com/sample.mp3',
+          headers: {'token': 'abc'}, rangeStart: 100, rangeEnd: 200);
       expect(calls.last.method, 'load');
       expect(
         calls.last.arguments,
         <String, Object?>{
-          'source': 'file://sample',
+          'source': 'https://example.com/sample.mp3',
           'headers': <String, Object?>{'token': 'abc'},
+          'range': <String, Object?>{'start': 100, 'end': 200},
         },
       );
     });

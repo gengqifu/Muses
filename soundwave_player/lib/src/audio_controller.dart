@@ -136,6 +136,33 @@ class AudioController {
         spectrum: _parseDoubleList(event['spectrum']) ?? _state.spectrum,
         error: null,
       ));
+    } else if (type == 'buffering') {
+      _emit(_state.copyWith(
+        bufferedPosition:
+            _parseDuration(event['bufferedMs'], _state.bufferedPosition ?? Duration.zero),
+        isBuffering: (event['isBuffering'] as bool?) ?? true,
+        error: null,
+      ));
+    } else if (type == 'retry') {
+      final message = event['message'] as String? ?? 'Retrying';
+      _emit(_state.copyWith(
+          error: message,
+          isBuffering: (event['isBuffering'] as bool?) ?? true,
+          bufferedPosition:
+              _parseDuration(event['bufferedMs'], _state.bufferedPosition ?? Duration.zero)));
+    } else if (type == 'stalled') {
+      _emit(_state.copyWith(
+        isBuffering: true,
+        error: (event['message'] as String?) ?? _state.error,
+      ));
+    } else if (type == 'resumed') {
+      _emit(_state.copyWith(
+        isBuffering: false,
+        position: _parseDuration(event['positionMs'], _state.position),
+        bufferedPosition:
+            _parseDuration(event['bufferedMs'], _state.bufferedPosition ?? Duration.zero),
+        error: null,
+      ));
     } else if (type == 'error') {
       final message = event['message'] as String? ?? 'Unknown error';
       _emit(_state.copyWith(error: message));

@@ -7,6 +7,9 @@ class SoundwaveConfig {
   final int? pcmMaxPending;
   final int? spectrumMaxFps;
   final int? spectrumMaxPending;
+  final int? connectTimeoutMs;
+  final int? readTimeoutMs;
+  final bool? enableRangeRequests;
 
   const SoundwaveConfig({
     required this.sampleRate,
@@ -17,6 +20,9 @@ class SoundwaveConfig {
     this.pcmMaxPending,
     this.spectrumMaxFps,
     this.spectrumMaxPending,
+    this.connectTimeoutMs,
+    this.readTimeoutMs,
+    this.enableRangeRequests,
   });
 
   void validate() {
@@ -44,6 +50,12 @@ class SoundwaveConfig {
     if (spectrumMaxPending != null && spectrumMaxPending! < 0) {
       throw ArgumentError.value(spectrumMaxPending, 'spectrumMaxPending', 'must be >= 0');
     }
+    if (connectTimeoutMs != null && connectTimeoutMs! <= 0) {
+      throw ArgumentError.value(connectTimeoutMs, 'connectTimeoutMs', 'must be > 0');
+    }
+    if (readTimeoutMs != null && readTimeoutMs! <= 0) {
+      throw ArgumentError.value(readTimeoutMs, 'readTimeoutMs', 'must be > 0');
+    }
   }
 
   Map<String, Object?> toMap() {
@@ -52,6 +64,13 @@ class SoundwaveConfig {
       'bufferSize': bufferSize,
       'channels': channels,
     };
+    final network = <String, Object?>{};
+    if (connectTimeoutMs != null) network['connectTimeoutMs'] = connectTimeoutMs;
+    if (readTimeoutMs != null) network['readTimeoutMs'] = readTimeoutMs;
+    if (enableRangeRequests != null) network['enableRangeRequests'] = enableRangeRequests;
+    if (network.isNotEmpty) {
+      map['network'] = network;
+    }
     final visualization = <String, Object?>{};
     if (pcmMaxFps != null) visualization['pcmMaxFps'] = pcmMaxFps;
     if (pcmFramesPerPush != null) visualization['pcmFramesPerPush'] = pcmFramesPerPush;

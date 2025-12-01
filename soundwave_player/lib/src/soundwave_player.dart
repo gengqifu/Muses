@@ -38,14 +38,33 @@ class SoundwavePlayer {
     _initialized = true;
   }
 
-  Future<void> load(String source, {Map<String, Object?>? headers}) async {
+  Future<void> load(String source,
+      {Map<String, Object?>? headers, int? rangeStart, int? rangeEnd}) async {
     _ensureInitialized();
     if (source.trim().isEmpty) {
       throw ArgumentError.value(source, 'source', 'cannot be empty');
     }
+    final uri = Uri.tryParse(source);
+    if (uri == null || !(uri.isScheme('http') || uri.isScheme('https') || uri.isScheme('file'))) {
+      throw ArgumentError.value(source, 'source', 'unsupported scheme');
+    }
+    if (rangeStart != null && rangeStart < 0) {
+      throw ArgumentError.value(rangeStart, 'rangeStart', 'must be >= 0');
+    }
+    if (rangeEnd != null && rangeEnd < 0) {
+      throw ArgumentError.value(rangeEnd, 'rangeEnd', 'must be >= 0');
+    }
+    if (rangeStart != null && rangeEnd != null && rangeEnd < rangeStart) {
+      throw ArgumentError.value(rangeEnd, 'rangeEnd', 'must be >= rangeStart');
+    }
     await _invoke<void>('load', <String, Object?>{
       'source': source,
       if (headers != null) 'headers': headers,
+      if (rangeStart != null || rangeEnd != null)
+        'range': <String, Object?>{
+          if (rangeStart != null) 'start': rangeStart,
+          if (rangeEnd != null) 'end': rangeEnd,
+        },
     });
   }
 

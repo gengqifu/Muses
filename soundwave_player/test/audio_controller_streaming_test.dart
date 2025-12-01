@@ -59,7 +59,8 @@ void main() {
       platform.shouldThrow = true;
       platform.throwError = const SoundwaveException('http_404', 'Not Found', null);
 
-      expect(() => controller.load('https://example.com/missing.mp3'),
+      await expectLater(
+          controller.load('https://example.com/missing.mp3'),
           throwsA(isA<SoundwaveException>().having((e) => e.code, 'code', 'http_404')));
       expect(controller.state.error, isNotNull);
     });

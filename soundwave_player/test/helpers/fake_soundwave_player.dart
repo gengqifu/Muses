@@ -23,7 +23,8 @@ class FakePlatform extends SoundwavePlayer {
   }
 
   @override
-  Future<void> load(String source, {Map<String, Object?>? headers}) async {
+  Future<void> load(String source,
+      {Map<String, Object?>? headers, int? rangeStart, int? rangeEnd}) async {
     calls.add('load');
     if (shouldThrow) {
       if (throwError != null) throw throwError!;
