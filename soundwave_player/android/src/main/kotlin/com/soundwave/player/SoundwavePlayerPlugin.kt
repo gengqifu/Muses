@@ -20,10 +20,8 @@ import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.DefaultRenderersFactory
-import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
-import androidx.media3.common.util.UnstableApi
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
@@ -181,13 +179,8 @@ class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler {
       httpFactory?.setDefaultRequestProperties(headers)
     }
 
-    val audioSink = DefaultAudioSink.Builder()
-      .setAudioProcessors(arrayOf(pcmProcessor))
-      .build()
-
     player = ExoPlayer.Builder(context)
       .setRenderersFactory(DefaultRenderersFactory(context))
-      .setAudioSink(audioSink)
       .build().also { exo ->
       log("initPlayer connect=$connectTimeout read=$readTimeout headers=${headers.keys}")
       exo.addListener(object : Player.Listener {
@@ -494,7 +487,6 @@ class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler {
     }
     val binHz = sampleRate.toDouble() / n
     return bins to binHz
-  }
   }
 
   companion object {
