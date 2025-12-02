@@ -1,22 +1,48 @@
 package com.soundwave.player
 
+import android.content.Context
+import android.content.Intent
+import android.media.AudioManager
+import android.net.Uri
 import android.util.Log
+import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
+import androidx.media3.common.Player
+import androidx.media3.datasource.DataSource
+import androidx.media3.datasource.DefaultDataSource
+import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.hls.HlsMediaSource
+import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
+import java.util.concurrent.ConcurrentHashMap
 
 /** SoundwavePlayerPlugin */
-class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler, EventChannel.StreamHandler {
+class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler {
+  private lateinit var context: Context
   private lateinit var methodChannel: MethodChannel
   private lateinit var stateEventChannel: EventChannel
   private lateinit var pcmEventChannel: EventChannel
   private lateinit var spectrumEventChannel: EventChannel
 
+  private var stateSink: EventChannel.EventSink? = null
+  private var pcmSink: EventChannel.EventSink? = null
+  private var spectrumSink: EventChannel.EventSink? = null
+
+  private var player: ExoPlayer? = null
+  private var httpFactory: DefaultHttpDataSource.Factory? = null
+  private var headers: Map<String, String> = emptyMap()
+  private var audioManager: AudioManager? = null
+  private var hasFocus: Boolean = false
+  private var serviceStarted: Boolean = false
+
   override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
-    log("onAttachedToEngine")
+    context = binding.applicationContext
     methodChannel = MethodChannel(binding.binaryMessenger, METHOD_CHANNEL_NAME)
     methodChannel.setMethodCallHandler(this)
 
@@ -24,45 +50,294 @@ class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler, EventChannel.Str
     pcmEventChannel = EventChannel(binding.binaryMessenger, "$EVENT_PREFIX/pcm")
     spectrumEventChannel = EventChannel(binding.binaryMessenger, "$EVENT_PREFIX/spectrum")
 
-    stateEventChannel.setStreamHandler(this)
-    pcmEventChannel.setStreamHandler(this)
-    spectrumEventChannel.setStreamHandler(this)
+    stateEventChannel.setStreamHandler(object : EventChannel.StreamHandler {
+      override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
+        stateSink = events
+        log("state onListen $arguments")
+      }
+
+      override fun onCancel(arguments: Any?) {
+        stateSink = null
+        log("state onCancel $arguments")
+      }
+    })
+    pcmEventChannel.setStreamHandler(object : EventChannel.StreamHandler {
+      override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
+        pcmSink = events
+        log("pcm onListen $arguments")
+      }
+
+      override fun onCancel(arguments: Any?) {
+        pcmSink = null
+        log("pcm onCancel $arguments")
+      }
+    })
+    spectrumEventChannel.setStreamHandler(object : EventChannel.StreamHandler {
+      override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
+        spectrumSink = events
+        log("spectrum onListen $arguments")
+      }
+
+      override fun onCancel(arguments: Any?) {
+        spectrumSink = null
+        log("spectrum onCancel $arguments")
+      }
+    })
+
+    audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+    log("onAttachedToEngine")
   }
 
   override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
-    log("onDetachedFromEngine")
     methodChannel.setMethodCallHandler(null)
     stateEventChannel.setStreamHandler(null)
     pcmEventChannel.setStreamHandler(null)
     spectrumEventChannel.setStreamHandler(null)
+    releasePlayer()
+    stopService()
+    log("onDetachedFromEngine")
   }
 
   override fun onMethodCall(call: MethodCall, result: Result) {
     log("onMethodCall ${call.method}")
     when (call.method) {
-      "init",
-      "load",
-      "play",
-      "pause",
-      "stop",
-      "seek" -> {
-        // Placeholder: succeed without doing anything yet
+      "init" -> initPlayer(call, result)
+      "load" -> load(call, result)
+      "play" -> {
+        player?.play()
+        startService()
         result.success(null)
       }
-
+      "pause" -> {
+        player?.pause()
+        result.success(null)
+      }
+      "stop" -> {
+        player?.stop()
+        stopService()
+        result.success(null)
+      }
+      "seek" -> {
+        val pos = (call.argument<Int>("positionMs") ?: 0).toLong()
+        player?.seekTo(pos)
+        result.success(null)
+      }
       else -> result.notImplemented()
     }
   }
 
-  // EventChannel.StreamHandler placeholders
-  override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
-    log("onListen ${arguments ?: "null"}")
-    // No-op placeholder stream; actual event emission will be added in later tasks.
+  private fun initPlayer(call: MethodCall, result: Result) {
+    releasePlayer()
+    abandonFocus()
+    val config = call.arguments as? Map<*, *> ?: emptyMap<String, Any?>()
+    val network = config["network"] as? Map<*, *>
+    val connectTimeout =
+      (network?.get("connectTimeoutMs") as? Number)?.toInt()
+        ?: DefaultHttpDataSource.DEFAULT_CONNECT_TIMEOUT_MILLIS
+    val readTimeout =
+      (network?.get("readTimeoutMs") as? Number)?.toInt()
+        ?: DefaultHttpDataSource.DEFAULT_READ_TIMEOUT_MILLIS
+
+    headers = (network?.get("headers") as? Map<*, *>)?.mapNotNull {
+      val key = it.key?.toString() ?: return@mapNotNull null
+      val value = it.value?.toString() ?: return@mapNotNull null
+      key to value
+    }?.toMap() ?: emptyMap()
+
+    httpFactory = DefaultHttpDataSource.Factory()
+      .setConnectTimeoutMs(connectTimeout)
+      .setReadTimeoutMs(readTimeout)
+      .setAllowCrossProtocolRedirects(true)
+    if (headers.isNotEmpty()) {
+      httpFactory?.setDefaultRequestProperties(headers)
+    }
+
+    player = ExoPlayer.Builder(context).build().also { exo ->
+      log("initPlayer connect=$connectTimeout read=$readTimeout headers=${headers.keys}")
+      exo.addListener(object : Player.Listener {
+        override fun onPlaybackStateChanged(playbackState: Int) {
+          when (playbackState) {
+            Player.STATE_BUFFERING -> emitState(
+              mapOf(
+                "type" to "buffering",
+                "isBuffering" to true,
+                "bufferedMs" to exo.bufferedPosition
+              )
+            )
+            Player.STATE_READY -> emitState(
+              mapOf(
+                "type" to "ready",
+                "isBuffering" to false,
+                "durationMs" to exo.duration
+              )
+            )
+            Player.STATE_ENDED -> emitState(
+              mapOf(
+                "type" to "completed",
+                "isPlaying" to false,
+                "positionMs" to exo.currentPosition,
+                "durationMs" to exo.duration,
+                "bufferedMs" to exo.bufferedPosition
+              )
+            )
+            else -> {}
+          }
+          emitState(
+            mapOf(
+              "type" to "state",
+              "state" to playbackState,
+              "positionMs" to exo.currentPosition,
+              "bufferedMs" to exo.bufferedPosition,
+              "durationMs" to exo.duration
+            )
+          )
+          log("state=$playbackState pos=${exo.currentPosition} buffered=${exo.bufferedPosition}")
+        }
+
+        override fun onPlayerError(error: PlaybackException) {
+          emitState(
+            mapOf(
+              "type" to "error",
+              "message" to (error.message ?: "playback error"),
+              "code" to error.errorCodeName
+            )
+          )
+          Log.e(TAG, "playerError code=${error.errorCodeName}", error)
+        }
+
+        override fun onIsPlayingChanged(isPlaying: Boolean) {
+          emitState(
+            mapOf(
+              "type" to "state",
+              "isPlaying" to isPlaying,
+              "positionMs" to exo.currentPosition,
+              "bufferedMs" to exo.bufferedPosition,
+              "durationMs" to exo.duration
+            )
+          )
+        }
+      })
+    }
+    result.success(null)
   }
 
-  override fun onCancel(arguments: Any?) {
-    log("onCancel ${arguments ?: "null"}")
-    // No-op
+  private fun load(call: MethodCall, result: Result) {
+    val source = call.argument<String>("source") ?: run {
+      result.error("invalid_args", "source is required", null)
+      return
+    }
+    val range = call.argument<Map<String, Any?>>("range") ?: emptyMap()
+    val rangeStart = (range["start"] as? Number)?.toLong()
+    val rangeEnd = (range["end"] as? Number)?.toLong()
+
+    val uri = Uri.parse(source)
+    val httpDsFactory = (httpFactory ?: DefaultHttpDataSource.Factory())
+    if (headers.isNotEmpty()) {
+      httpDsFactory.setDefaultRequestProperties(headers)
+    }
+    if (rangeStart != null) {
+      val end = rangeEnd ?: -1
+      httpDsFactory.setDefaultRequestProperties(
+        mapOf("Range" to "bytes=$rangeStart-${if (end >= 0) end else ""}")
+      )
+    }
+    val dataSourceFactory: DataSource.Factory =
+      DefaultDataSource.Factory(context, httpDsFactory)
+    val mediaItemBuilder = MediaItem.Builder().setUri(source)
+    if (headers.isNotEmpty()) {
+      val props = ConcurrentHashMap<String, String>()
+      props.putAll(headers)
+      mediaItemBuilder.setRequestMetadata(
+        MediaItem.RequestMetadata.Builder().setHttpRequestHeaders(props).build()
+      )
+    }
+    val mediaItem = mediaItemBuilder.build()
+    val mediaSource = if (uri.toString().endsWith(".m3u8", ignoreCase = true)) {
+      HlsMediaSource.Factory(dataSourceFactory).createMediaSource(mediaItem)
+    } else {
+      ProgressiveMediaSource.Factory(dataSourceFactory).createMediaSource(mediaItem)
+    }
+
+    val exo = player ?: run {
+      result.error("invalid_state", "Player not initialized", null); return
+    }
+    log("load source=$source scheme=${uri.scheme} range=[$rangeStart,$rangeEnd] headers=${headers.keys}")
+    exo.setMediaSource(mediaSource)
+    exo.prepare()
+    requestFocus()
+    emitState(mapOf("type" to "state", "isPlaying" to false, "bufferedMs" to 0))
+    result.success(null)
+  }
+
+  private fun emitState(event: Map<String, Any?>) {
+    stateSink?.success(event)
+  }
+
+  private fun releasePlayer() {
+    player?.release()
+    player = null
+  }
+
+  private fun startService() {
+    if (serviceStarted) return
+    val intent = Intent(context, ForegroundAudioService::class.java)
+    context.startForegroundService(intent)
+    serviceStarted = true
+    log("foreground service started")
+  }
+
+  private fun stopService() {
+    if (!serviceStarted) return
+    val intent = Intent(context, ForegroundAudioService::class.java)
+    context.stopService(intent)
+    serviceStarted = false
+    log("foreground service stopped")
+  }
+
+  // Audio focus
+  private fun requestFocus() {
+    val am = audioManager ?: return
+    val result = am.requestAudioFocus(
+      { focusChange -> onAudioFocusChange(focusChange) },
+      AudioManager.STREAM_MUSIC,
+      AudioManager.AUDIOFOCUS_GAIN
+    )
+    hasFocus = result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
+    log("requestAudioFocus result=$result granted=$hasFocus")
+  }
+
+  private fun abandonFocus() {
+    audioManager?.abandonAudioFocus { onAudioFocusChange(it) }
+    hasFocus = false
+    log("abandonAudioFocus")
+  }
+
+  private fun onAudioFocusChange(focusChange: Int) {
+    when (focusChange) {
+      AudioManager.AUDIOFOCUS_LOSS -> {
+        player?.pause()
+        emitState(mapOf("type" to "focusLost", "message" to "Audio focus lost"))
+      }
+      AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
+        player?.pause()
+        emitState(mapOf("type" to "focusLost", "message" to "Audio focus transient loss"))
+      }
+      AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+        player?.volume = 0.2f
+        emitState(mapOf("type" to "focusLost", "message" to "Ducking"))
+      }
+      AudioManager.AUDIOFOCUS_GAIN -> {
+        player?.volume = 1.0f
+        emitState(
+          mapOf(
+            "type" to "resumedFromBackground",
+            "positionMs" to (player?.currentPosition ?: 0),
+            "bufferedMs" to (player?.bufferedPosition ?: 0)
+          )
+        )
+      }
+    }
+    log("audioFocusChange=$focusChange playing=${player?.isPlaying}")
   }
 
   companion object {
