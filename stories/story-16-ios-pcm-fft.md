@@ -1,0 +1,27 @@
+# Story 16：iOS PCM 旁路与频谱推送
+
+## 目标
+在 iOS 侧为 AVPlayer 播放链路接入音频 tap/旁路，获取 PCM 帧并通过 EventChannel 推送到 Dart，完成基础频谱（FFT）计算推送，使波形/频谱 UI 能实时展示本地/HTTP 音频数据。
+
+## 测试优先（TDD）
+- ✖ [1] 补充测试计划（占位）：约定事件格式、时间戳与节流规则，覆盖 HTTP/本地 asset 两类输入。
+- ✖ [2] 添加占位/跳过用例：如 `soundwave_player/test/ios_pcm_fft_placeholder.dart`，模拟事件流验证 Dart 缓冲/波形组件消费数据；若缺运行环境则 `@Skip` 并写明原因。
+
+## 开发任务
+- ✖ [3] AVPlayer 旁路：在 `AVPlayerItem` 上添加 `AVAudioMix` + `audioTapProcessor`（或等效旁路）获取 PCM 16/32bit，保持播放正常。
+- ✖ [4] PCM 事件推送：后台线程/队列聚合帧，按帧率（~30fps）推到 `pcm` EventChannel，字段 `sequence`、`timestampMs`（基于 `currentTime()`）、`samples`；seek/stop/load 时重置计数/清空队列并上报丢弃。
+- ✖ [5] 频谱计算：使用 Accelerate/vDSP 对旁路 PCM 窗口化+FFT，推送 `spectrum` 事件（`sequence`、`timestampMs`、`bins`、`binHz`），与 PCM 同步重置，限制 CPU（可抽稀频率/下采样）。
+- ✖ [6] 资源加载与配置：支持 HTTP（必要时 Info.plist ATS 例外）和本地 asset（拷贝到沙盒后播放）；确保解码与旁路兼容。
+- ✖ [7] 状态/生命周期：处理中断/路由/后台前台切换时，暂停/恢复旁路，避免旧数据污染；释放时移除 tap 与观察者。
+- ✖ [8] 日志与诊断：在 tap/推送链路关键节点打 Info 级日志，便于 `flutter run`/Xcode 控制台排查。
+
+## 完成标准（DoD）
+- ✖ [9] 在 iOS 真机上播放 HTTP 或打包 asset，波形/频谱 UI 实时刷新（Dart 层无需额外修改）。
+- ✖ [10] 事件格式符合设计，序列/时间戳单调；seek/stop/load 后无旧数据混入，丢帧计数生效。
+- ✖ [11] 构建通过；占位测试计划/用例已更新并标注原因。
+
+### T1 测试计划（占位）
+- 事件格式：PCM 事件包含 `sequence:int`、`timestampMs:int64`、`samples:float[]`；频谱事件包含 `sequence`、`timestampMs`、`bins:float[]`、`binHz:double`。
+- 序列与时间戳：同一事件流内单调递增；seek/stop/load 后重置为 0/新基准，并丢弃旧队列。
+- 丢帧标记：旁路队列溢出或聚合丢弃时推送 `droppedBefore:int` 或 `dropped:true`，便于 UI 统计丢帧。
+- 帧率节流：PCM/谱推送不超过 ~30fps；队列上限（如 60 帧）溢出即丢弃最旧；FFT 可抽稀频率以控 CPU。
