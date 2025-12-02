@@ -14,10 +14,9 @@ class PcmRenderersFactory(
   override fun buildAudioSink(
     context: Context,
     enableFloatOutput: Boolean,
-    enableFloatOutput24Bit: Boolean,
     enableAudioTrackPlaybackParams: Boolean
-  ): AudioSink {
-    return DefaultAudioSink.Builder()
+  ): AudioSink? {
+    return DefaultAudioSink.Builder(context)
       .setAudioProcessors(arrayOf(tapProcessor))
       .setEnableFloatOutput(enableFloatOutput)
       .setEnableAudioTrackPlaybackParams(enableAudioTrackPlaybackParams)
