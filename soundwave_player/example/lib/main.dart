@@ -38,13 +38,17 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> _init() async {
     try {
+      debugPrint('Demo: init() start');
       await _controller.init(const SoundwaveConfig(sampleRate: 48000, bufferSize: 2048, channels: 2));
       _controller.states.listen((s) {
         setState(() {
           _state = s;
         });
+        debugPrint('Demo: state update playing=${s.isPlaying} buffering=${s.isBuffering} '
+            'pos=${s.position.inMilliseconds} dur=${s.duration.inMilliseconds} err=${s.error}');
       });
       setState(() => _initialized = true);
+      debugPrint('Demo: init() done');
     } catch (e) {
       _showError('Init failed: $e');
     }
@@ -52,7 +56,10 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> _load() async {
     try {
-      await _controller.load(_sourceController.text.trim());
+      final src = _sourceController.text.trim();
+      debugPrint('Demo: load($src)');
+      await _controller.load(src);
+      debugPrint('Demo: load() done');
     } catch (e) {
       _showError('Load failed: $e');
     }
@@ -60,6 +67,7 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> _play() async {
     try {
+      debugPrint('Demo: play()');
       await _controller.play();
     } catch (e) {
       _showError('Play failed: $e');
@@ -68,6 +76,7 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> _pause() async {
     try {
+      debugPrint('Demo: pause()');
       await _controller.pause();
     } catch (e) {
       _showError('Pause failed: $e');
@@ -76,6 +85,7 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> _stop() async {
     try {
+      debugPrint('Demo: stop()');
       await _controller.stop();
     } catch (e) {
       _showError('Stop failed: $e');
@@ -85,6 +95,7 @@ class _MyAppState extends State<MyApp> {
   Future<void> _seek() async {
     try {
       final ms = int.tryParse(_seekController.text.trim()) ?? 0;
+      debugPrint('Demo: seek($ms ms)');
       await _controller.seek(Duration(milliseconds: ms));
     } catch (e) {
       _showError('Seek failed: $e');
