@@ -459,7 +459,6 @@ private class AudioTapProcessor {
   }
 
   private let tapProcess: MTAudioProcessingTapProcessCallback = { tap, numberFrames, flags, bufferListInOut, numberFramesOut, _ in
-    guard let bufferListInOut = bufferListInOut else { return }
     let storage = MTAudioProcessingTapGetStorage(tap)
     let processor = Unmanaged<AudioTapProcessor>.fromOpaque(storage).takeUnretainedValue()
 
