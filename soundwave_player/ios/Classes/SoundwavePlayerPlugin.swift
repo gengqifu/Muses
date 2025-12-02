@@ -441,29 +441,29 @@ private class AudioTapProcessor {
 
   // MARK: - Tap callbacks
   private let tapInit: MTAudioProcessingTapInitCallback = { tap, clientInfo, tapStorageOut in
-    tapStorageOut?.pointee = clientInfo
+    tapStorageOut.pointee = clientInfo
   }
 
-  private let tapFinalize: MTAudioProcessingTapFinalizeCallback = { _, _ in }
+  private let tapFinalize: MTAudioProcessingTapFinalizeCallback = { _ in }
 
   private let tapPrepare: MTAudioProcessingTapPrepareCallback = { tap, maxFrames, processingFormat in
-    guard let storage = MTAudioProcessingTapGetStorage(tap) else { return }
+    let storage = MTAudioProcessingTapGetStorage(tap)
     let processor = Unmanaged<AudioTapProcessor>.fromOpaque(storage).takeUnretainedValue()
     processor.onPrepare(maxFrames: maxFrames, format: processingFormat.pointee)
   }
 
   private let tapUnprepare: MTAudioProcessingTapUnprepareCallback = { tap in
-    guard let storage = MTAudioProcessingTapGetStorage(tap) else { return }
+    let storage = MTAudioProcessingTapGetStorage(tap)
     let processor = Unmanaged<AudioTapProcessor>.fromOpaque(storage).takeUnretainedValue()
     processor.onUnprepare()
   }
 
   private let tapProcess: MTAudioProcessingTapProcessCallback = { tap, numberFrames, flags, bufferListInOut, numberFramesOut, _ in
-    guard let storage = MTAudioProcessingTapGetStorage(tap),
-          let bufferListInOut = bufferListInOut else { return }
+    guard let bufferListInOut = bufferListInOut else { return }
+    let storage = MTAudioProcessingTapGetStorage(tap)
     let processor = Unmanaged<AudioTapProcessor>.fromOpaque(storage).takeUnretainedValue()
 
-    var localFlags = MTAudioProcessingTapFlags(rawValue: 0)
+    var localFlags: MTAudioProcessingTapFlags = 0
     var timeRange = CMTimeRange()
     numberFramesOut.pointee = 0
 
