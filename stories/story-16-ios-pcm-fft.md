@@ -5,7 +5,7 @@
 
 ## 测试优先（TDD）
 - ✔ [1] 补充测试计划（占位）：约定事件格式、时间戳/帧率与节流规则，覆盖 HTTP（ATS 例外）与本地 asset（沙盒拷贝）两类输入，仅限真机（iOS 15+，如 iPhone 12/13/14），模拟器不验。
-- ✖ [2] 添加占位/跳过用例：如 `soundwave_player/test/ios_pcm_fft_placeholder.dart`，模拟事件流验证 Dart 缓冲/波形组件消费数据；若缺运行环境则 `@Skip` 并写明原因。
+- ✔ [2] 添加占位/跳过用例：`soundwave_player/test/ios_pcm_fft_placeholder.dart`，模拟 PCM/频谱事件的缓冲、时间戳回退处理，因 iOS 原生旁路未落地故全局 Skip。
 
 ## 开发任务
 - ✖ [3] AVPlayer 旁路：在 `AVPlayerItem` 上添加 `AVAudioMix` + `audioTapProcessor`（或等效旁路）获取 PCM 16/32bit，保持播放正常。
