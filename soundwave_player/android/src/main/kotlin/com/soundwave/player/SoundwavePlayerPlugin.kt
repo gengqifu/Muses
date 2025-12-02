@@ -10,6 +10,7 @@ import android.util.Log
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.hypot
+import kotlin.math.sin
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
@@ -388,10 +389,11 @@ class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler {
       val dropped = pcmProcessor.droppedSinceLastDrain()
       if (frames.isNotEmpty()) {
         frames.forEach { frame ->
+          val ts = player?.currentPosition ?: frame.timestampMs
           pcmSink?.success(
             mapOf(
               "sequence" to frame.sequence,
-              "timestampMs" to frame.timestampMs,
+              "timestampMs" to ts,
               "samples" to frame.samples.toList(),
               "droppedBefore" to dropped
             )
@@ -401,7 +403,7 @@ class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler {
             spectrumSink?.success(
               mapOf(
                 "sequence" to frame.sequence,
-                "timestampMs" to frame.timestampMs,
+                "timestampMs" to ts,
                 "bins" to spectrum.first.toList(),
                 "binHz" to spectrum.second
               )
@@ -431,32 +433,6 @@ class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler {
       val w = 0.5f * (1f - cos((2.0 * PI * i) / (n - 1)).toFloat())
       re[i] = samples[i] * w
     }
-    // iterative Cooley-Tukey FFT (radix-2)
-    var m = 2
-    while (m <= n) {
-      val half = m / 2
-      val theta = (-2.0 * PI / m).toFloat()
-      val wmRe = cos(theta)
-      val wmIm = kotlin.math.sin(theta)
-      for (j in 0 until half) {
-        var wRe = 1f
-        var wIm = 0f
-        var k = j
-        while (k < n) {
-          val tRe = wRe * re[k + half] - wIm * im[k + half]
-          val tIm = wRe * im[k + half] + wIm * re[k + half]
-          re[k + half] = re[k] - tRe
-          im[k + half] = im[k] - tIm
-          re[k] += tRe
-          im[k] += tIm
-          k += m
-        }
-        val tmpRe = wRe * wmRe - wIm * wmIm
-        wIm = wRe * wmIm + wIm * wmRe
-        wRe = tmpRe
-      }
-      m = m shl 1
-    }
     // bit reversal
     var j = 0
     for (i in 1 until n) {
@@ -470,6 +446,33 @@ class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler {
         val tr = re[i]; re[i] = re[j]; re[j] = tr
         val ti = im[i]; im[i] = im[j]; im[j] = ti
       }
+    }
+    // iterative Cooley-Tukey FFT (radix-2)
+    var lenM = 2
+    while (lenM <= n) {
+      val angle = -2.0 * PI / lenM
+      val wLenRe = cos(angle)
+      val wLenIm = sin(angle)
+      for (k in 0 until n step lenM) {
+        var wRe = 1.0
+        var wIm = 0.0
+        for (m in 0 until lenM / 2) {
+          val evenRe = re[k + m]
+          val evenIm = im[k + m]
+          val oddRe = re[k + m + lenM / 2]
+          val oddIm = im[k + m + lenM / 2]
+          val tRe = wRe * oddRe - wIm * oddIm
+          val tIm = wRe * oddIm + wIm * oddRe
+          re[k + m] = (evenRe + tRe).toFloat()
+          im[k + m] = (evenIm + tIm).toFloat()
+          re[k + m + lenM / 2] = (evenRe - tRe).toFloat()
+          im[k + m + lenM / 2] = (evenIm - tIm).toFloat()
+          val tmpRe = wRe
+          wRe = tmpRe * wLenRe - wIm * wLenIm
+          wIm = tmpRe * wLenIm + wIm * wLenRe
+        }
+      }
+      lenM = lenM shl 1
     }
     val bins = FloatArray(n / 2)
     for (i in bins.indices) {
