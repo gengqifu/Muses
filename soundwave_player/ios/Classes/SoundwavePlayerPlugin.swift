@@ -80,6 +80,7 @@ public class SoundwavePlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
     player?.automaticallyWaitsToMinimizeStalling = true
     configureAudioSession()
     registerNotifications()
+    log("player setup done")
 
     timeControlObserver = player?.observe(\.timeControlStatus, options: [.new]) { [weak self] player, change in
       guard let self = self else { return }
@@ -100,6 +101,7 @@ public class SoundwavePlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
       default:
         break
       }
+      self.log("timeControlStatus=\(player.timeControlStatus.rawValue) pos=\(player.currentPositionMs)")
     }
   }
 
@@ -114,6 +116,7 @@ public class SoundwavePlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
     )
     audioTap?.attach(to: item)
     player?.replaceCurrentItem(with: item)
+    log("load url=\(url.absoluteString)")
 
     statusObserver = item.observe(\.status, options: [.new, .initial]) { [weak self] item, _ in
       guard let self = self else { return }
@@ -142,6 +145,7 @@ public class SoundwavePlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
         "isBuffering": true,
         "bufferedMs": item.bufferedPositionMs
       ])
+      self.log("buffering bufferedMs=\(item.bufferedPositionMs)")
     }
 
     addPeriodicTimeObserver()
@@ -163,6 +167,7 @@ public class SoundwavePlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
   }
 
   private func emitState(_ dict: [String: Any?]) {
+    log("state event \(dict)")
     stateSink?(dict)
   }
 
@@ -198,6 +203,7 @@ public class SoundwavePlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
     }
     player?.pause()
     player?.replaceCurrentItem(with: nil)
+    log("stop called, player released")
   }
 
   // MARK: - FlutterStreamHandler
@@ -252,6 +258,9 @@ private class AudioTapProcessor {
     let sequence: Int
     let timestampMs: Int64
     let samples: [Double]
+  }
+  private func log(_ msg: String) {
+    print("Soundwave[iOS]: \(msg)")
   }
 
   init(player: AVPlayer?, pcmSinkProvider: @escaping () -> FlutterEventSink?, spectrumSinkProvider: @escaping () -> FlutterEventSink?) {
@@ -543,6 +552,7 @@ extension SoundwavePlayerPlugin {
             let reason = AVAudioSession.RouteChangeReason(rawValue: reasonValue) else { return }
       if reason == .oldDeviceUnavailable {
         self.emitState(["type": "focusLost", "message": "Audio route changed"])
+        self.log("route change: oldDeviceUnavailable")
       }
     }
     backgroundObserver = NotificationCenter.default.addObserver(
@@ -572,6 +582,7 @@ extension SoundwavePlayerPlugin {
     switch type {
     case .began:
       emitState(["type": "focusLost", "message": "Audio interrupted"])
+      log("interruption began")
     case .ended:
       let shouldResume = (info[AVAudioSessionInterruptionOptionKey] as? UInt).map {
         AVAudioSession.InterruptionOptions(rawValue: $0).contains(.shouldResume)
@@ -582,6 +593,7 @@ extension SoundwavePlayerPlugin {
           "positionMs": player?.currentPositionMs ?? 0,
           "bufferedMs": player?.currentItem?.bufferedPositionMs ?? 0
         ])
+        log("interruption ended, shouldResume")
       }
     @unknown default:
       break
