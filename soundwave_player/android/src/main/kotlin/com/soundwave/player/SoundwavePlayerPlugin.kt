@@ -4,12 +4,13 @@ import android.content.Context
 import android.content.Intent
 import android.media.AudioManager
 import android.net.Uri
-import android.util.Log
 import android.os.Handler
 import android.os.HandlerThread
+import android.util.Log
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.DefaultHttpDataSource
@@ -18,6 +19,7 @@ import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
+import androidx.media3.common.util.UnstableApi
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
@@ -27,6 +29,7 @@ import io.flutter.plugin.common.MethodChannel.Result
 import java.util.concurrent.ConcurrentHashMap
 
 /** SoundwavePlayerPlugin */
+@UnstableApi
 class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler {
   private lateinit var context: Context
   private lateinit var methodChannel: MethodChannel
@@ -110,7 +113,10 @@ class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler {
     log("onMethodCall ${call.method}")
     when (call.method) {
       "init" -> initPlayer(call, result)
-      "load" -> load(call, result)
+      "load" -> {
+        resetPcm()
+        load(call, result)
+      }
       "play" -> {
         player?.play()
         startService()
@@ -123,11 +129,13 @@ class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler {
       "stop" -> {
         player?.stop()
         stopService()
+        resetPcm()
         result.success(null)
       }
       "seek" -> {
         val pos = (call.argument<Int>("positionMs") ?: 0).toLong()
         player?.seekTo(pos)
+        resetPcm()
         result.success(null)
       }
       else -> result.notImplemented()
@@ -137,6 +145,7 @@ class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler {
   private fun initPlayer(call: MethodCall, result: Result) {
     releasePlayer()
     abandonFocus()
+    stopPcmLoop()
     stopPcmLoop()
     val config = call.arguments as? Map<*, *> ?: emptyMap<String, Any?>()
     val network = config["network"] as? Map<*, *>
@@ -371,19 +380,24 @@ class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler {
   private val pcmPushRunnable = object : Runnable {
     override fun run() {
       val frames = pcmProcessor.drain(5)
-      if (frames.isNotEmpty()) {
-        frames.forEach { frame ->
-          pcmSink?.success(
-            mapOf(
-              "sequence" to frame.sequence,
-              "timestampMs" to frame.timestampMs,
-              "samples" to frame.samples.toList()
-            )
+    if (frames.isNotEmpty()) {
+      frames.forEach { frame ->
+        pcmSink?.success(
+          mapOf(
+            "sequence" to frame.sequence,
+            "timestampMs" to frame.timestampMs,
+            "samples" to frame.samples.toList()
           )
-        }
+        )
       }
-      pcmHandler?.postDelayed(this, 1000L / 30L)
     }
+    pcmHandler?.postDelayed(this, 1000L / 30L)
+  }
+
+  private fun resetPcm() {
+    pcmProcessor.onReset()
+    log("pcm reset")
+  }
   }
 
   companion object {

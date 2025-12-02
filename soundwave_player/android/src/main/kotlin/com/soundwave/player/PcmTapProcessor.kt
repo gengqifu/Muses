@@ -9,6 +9,7 @@ import androidx.media3.exoplayer.audio.BaseAudioProcessor
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.AtomicInteger
 
 @UnstableApi
 class PcmTapProcessor : BaseAudioProcessor() {
@@ -16,6 +17,8 @@ class PcmTapProcessor : BaseAudioProcessor() {
   private var sequence: Long = 0
   private var inputEnded = false
   private var lastFormat: AudioFormat? = null
+  private val droppedCounter = AtomicInteger(0)
+  private val maxQueueFrames = 60
 
   override fun onConfigure(inputAudioFormat: AudioFormat): AudioFormat? {
     if (!AudioProcessor.isEncodingLinearPcm(inputAudioFormat.encoding)) {
@@ -61,6 +64,11 @@ class PcmTapProcessor : BaseAudioProcessor() {
       }
       else -> FloatArray(0)
     }
+    if (queue.size >= maxQueueFrames) {
+      // Drop the oldest frame when over capacity.
+      queue.poll()
+      droppedCounter.incrementAndGet()
+    }
     queue.add(PcmFrame(sequence++, SystemClock.elapsedRealtime(), samples))
   }
 
@@ -75,6 +83,7 @@ class PcmTapProcessor : BaseAudioProcessor() {
     sequence = 0
     inputEnded = false
     lastFormat = null
+    droppedCounter.set(0)
   }
 
   fun drain(maxFrames: Int): List<PcmFrame> {
@@ -86,4 +95,6 @@ class PcmTapProcessor : BaseAudioProcessor() {
     }
     return out
   }
+
+  fun droppedSinceLastDrain(): Int = droppedCounter.getAndSet(0)
 }
