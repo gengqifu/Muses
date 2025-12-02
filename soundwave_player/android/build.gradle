@@ -26,7 +26,7 @@ apply plugin: "kotlin-android"
 
 android {
     if (project.android.hasProperty("namespace")) {
-        namespace = "com.soundwave.soundwave_player"
+        namespace = "com.soundwave.player"
     }
 
     compileSdk = 34
