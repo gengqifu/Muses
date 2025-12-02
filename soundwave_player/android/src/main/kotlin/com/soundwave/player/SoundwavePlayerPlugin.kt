@@ -12,6 +12,8 @@ import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.DefaultRenderersFactory
+import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import io.flutter.embedding.engine.plugins.FlutterPlugin
@@ -40,6 +42,7 @@ class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler {
   private var audioManager: AudioManager? = null
   private var hasFocus: Boolean = false
   private var serviceStarted: Boolean = false
+  private val pcmProcessor = PcmTapProcessor()
 
   override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
     context = binding.applicationContext
@@ -152,7 +155,14 @@ class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler {
       httpFactory?.setDefaultRequestProperties(headers)
     }
 
-    player = ExoPlayer.Builder(context).build().also { exo ->
+    val audioSink = DefaultAudioSink.Builder()
+      .setAudioProcessors(arrayOf(pcmProcessor))
+      .build()
+
+    player = ExoPlayer.Builder(context)
+      .setRenderersFactory(DefaultRenderersFactory(context))
+      .setAudioSink(audioSink)
+      .build().also { exo ->
       log("initPlayer connect=$connectTimeout read=$readTimeout headers=${headers.keys}")
       exo.addListener(object : Player.Listener {
         override fun onPlaybackStateChanged(playbackState: Int) {
@@ -268,6 +278,7 @@ class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler {
   private fun releasePlayer() {
     player?.release()
     player = null
+    pcmProcessor.onReset()
   }
 
   private fun startService() {
