@@ -30,15 +30,16 @@ class PcmTapProcessor : AudioProcessor {
   override fun isActive(): Boolean = lastFormat.encoding != C.ENCODING_INVALID
 
   override fun queueInput(inputBuffer: ByteBuffer) {
-    val remaining = inputBuffer.remaining()
-    if (remaining == 0 || lastFormat.encoding == C.ENCODING_INVALID) {
+    if (!inputBuffer.hasRemaining() || lastFormat.encoding == C.ENCODING_INVALID) {
       return
     }
 
-    // Convert PCM to float samples for side-channel.
+    // Create a duplicate buffer to read from, so we don't consume the original.
+    val bufferForTap = inputBuffer.duplicate()
+    val remaining = bufferForTap.remaining()
     val data = ByteArray(remaining)
-    inputBuffer.get(data)
-    inputBuffer.position(inputBuffer.position() + remaining) // Manually advance position
+    bufferForTap.get(data)
+    // The original inputBuffer is left untouched and will be passed to the player.
 
     val samples = when (lastFormat.encoding) {
       C.ENCODING_PCM_16BIT -> {

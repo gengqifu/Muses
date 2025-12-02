@@ -6,6 +6,7 @@ import android.media.AudioManager
 import android.net.Uri
 import android.os.Handler
 import android.os.HandlerThread
+import android.os.Looper
 import android.util.Log
 import kotlin.math.PI
 import kotlin.math.cos
@@ -52,6 +53,16 @@ class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler {
   private var sampleRate: Int = 48000
   private var pcmWorker: HandlerThread? = null
   private var pcmHandler: Handler? = null
+  private val mainHandler = Handler(Looper.getMainLooper())
+
+  @Volatile
+  private var lastKnownPositionMs: Long = 0
+  private val positionUpdater = object : Runnable {
+    override fun run() {
+      lastKnownPositionMs = player?.currentPosition ?: 0
+      mainHandler.postDelayed(this, 100) // Poll every 100ms
+    }
+  }
 
   override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
     context = binding.applicationContext
@@ -123,11 +134,13 @@ class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler {
       "play" -> {
         player?.play()
         startService()
+        startPositionUpdater()
         startPcmLoop()
         result.success(null)
       }
       "pause" -> {
         player?.pause()
+        stopPositionUpdater()
         stopPcmLoop()
         result.success(null)
       }
@@ -135,6 +148,7 @@ class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler {
         player?.stop()
         stopService()
         resetPcm()
+        stopPositionUpdater()
         stopPcmLoop()
         result.success(null)
       }
@@ -296,6 +310,7 @@ class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler {
   private fun releasePlayer() {
     player?.release()
     player = null
+    stopPositionUpdater()
     pcmProcessor.reset()
   }
 
@@ -361,6 +376,15 @@ class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler {
     log("audioFocusChange=$focusChange playing=${player?.isPlaying}")
   }
 
+  private fun startPositionUpdater() {
+    mainHandler.removeCallbacks(positionUpdater)
+    mainHandler.post(positionUpdater)
+  }
+
+  private fun stopPositionUpdater() {
+    mainHandler.removeCallbacks(positionUpdater)
+  }
+
   private fun startPcmLoop() {
     if (pcmWorker == null) {
       pcmWorker = HandlerThread("pcm-push").also { it.start() }
@@ -381,12 +405,17 @@ class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler {
 
   private val pcmPushRunnable = object : Runnable {
     override fun run() {
+      // --- This part runs on the background thread ---
       val frames = pcmProcessor.drain(5)
       val dropped = pcmProcessor.droppedSinceLastDrain()
+      val ts = lastKnownPositionMs
+
+      val pcmPayloads = mutableListOf<Map<String, Any?>>()
+      val spectrumPayloads = mutableListOf<Map<String, Any?>>()
+
       if (frames.isNotEmpty()) {
         frames.forEach { frame ->
-          val ts = player?.currentPosition ?: frame.timestampMs
-          pcmSink?.success(
+          pcmPayloads.add(
             mapOf(
               "sequence" to frame.sequence,
               "timestampMs" to ts,
@@ -396,7 +425,7 @@ class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler {
           )
           val spectrum = computeSpectrum(frame.samples)
           if (spectrum != null) {
-            spectrumSink?.success(
+            spectrumPayloads.add(
               mapOf(
                 "sequence" to frame.sequence,
                 "timestampMs" to ts,
@@ -406,10 +435,22 @@ class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler {
             )
           }
         }
-        log("pcmPush frames=${frames.size} dropped=$dropped ts=${player?.currentPosition}")
-      } else if (dropped > 0) {
-        notifyDropped(dropped)
       }
+
+      // --- Dispatch the event sending to the main thread ---
+      if (pcmPayloads.isNotEmpty() || spectrumPayloads.isNotEmpty() || dropped > 0) {
+        mainHandler.post {
+          pcmPayloads.forEach { pcmSink?.success(it) }
+          spectrumPayloads.forEach { spectrumSink?.success(it) }
+          if (dropped > 0 && pcmPayloads.isEmpty()) {
+            notifyDropped(dropped)
+          }
+          if (frames.isNotEmpty()) {
+             log("pcmPush frames=${frames.size} dropped=$dropped ts=$ts")
+          }
+        }
+      }
+
       pcmHandler?.postDelayed(this, 1000L / 30L)
     }
   }
