@@ -311,7 +311,7 @@ class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler {
     player?.release()
     player = null
     stopPositionUpdater()
-    pcmProcessor.reset()
+    pcmProcessor.onReset()
   }
 
   private fun startService() {
@@ -457,7 +457,7 @@ class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler {
 
   private fun resetPcm() {
     val dropped = pcmProcessor.droppedSinceLastDrain()
-    pcmProcessor.reset()
+    pcmProcessor.onReset()
     notifyDropped(dropped)
     log("pcm reset")
   }
