@@ -34,6 +34,9 @@ class SoundwavePlayer {
       throw StateError('SoundwavePlayer has already been initialized');
     }
     config.validate();
+    // Log initialization path for troubleshooting.
+    // ignore: avoid_print
+    print('SoundwavePlayer:init ${config.toMap()}');
     await _invoke<void>('init', config.toMap());
     _initialized = true;
   }
@@ -62,6 +65,8 @@ class SoundwavePlayer {
     if (rangeStart != null && rangeEnd != null && rangeEnd < rangeStart) {
       throw ArgumentError.value(rangeEnd, 'rangeEnd', 'must be >= rangeStart');
     }
+    // ignore: avoid_print
+    print('SoundwavePlayer:load source=$source range=[$rangeStart,$rangeEnd] headers=${headers?.keys}');
     await _invoke<void>('load', <String, Object?>{
       'source': source,
       if (headers != null) 'headers': headers,
@@ -75,16 +80,22 @@ class SoundwavePlayer {
 
   Future<void> play() {
     _ensureInitialized();
+    // ignore: avoid_print
+    print('SoundwavePlayer:play');
     return _invoke<void>('play');
   }
 
   Future<void> pause() {
     _ensureInitialized();
+    // ignore: avoid_print
+    print('SoundwavePlayer:pause');
     return _invoke<void>('pause');
   }
 
   Future<void> stop() {
     _ensureInitialized();
+    // ignore: avoid_print
+    print('SoundwavePlayer:stop');
     return _invoke<void>('stop');
   }
 
@@ -93,6 +104,8 @@ class SoundwavePlayer {
     if (position.isNegative) {
       throw ArgumentError.value(position, 'position', 'must be >= 0');
     }
+    // ignore: avoid_print
+    print('SoundwavePlayer:seek ${position.inMilliseconds}ms');
     await _invoke<void>(
         'seek', <String, Object?>{'positionMs': position.inMilliseconds});
   }

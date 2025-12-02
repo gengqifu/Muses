@@ -46,7 +46,7 @@ class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler, EventChannel.Str
         stateChannel.setStreamHandler(this)
 
         audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-        Log.d(TAG, "attachedToEngine")
+        log("attachedToEngine")
     }
 
     override fun onDetachedFromEngine(binding: FlutterPluginBinding) {
@@ -59,33 +59,33 @@ class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler, EventChannel.Str
     override fun onMethodCall(call: MethodCall, result: Result) {
         when (call.method) {
             "init" -> {
-                Log.d(TAG, "method:init args=${call.arguments}")
+                log("method:init args=${call.arguments}")
                 initPlayer(call, result)
             }
             "load" -> {
-                Log.d(TAG, "method:load args=${call.arguments}")
+                log("method:load args=${call.arguments}")
                 load(call, result)
             }
             "play" -> {
-                Log.d(TAG, "method:play")
+                log("method:play")
                 player?.play()
                 startService()
                 result.success(null)
             }
             "pause" -> {
-                Log.d(TAG, "method:pause")
+                log("method:pause")
                 player?.pause()
                 result.success(null)
             }
             "stop" -> {
-                Log.d(TAG, "method:stop")
+                log("method:stop")
                 player?.stop()
                 stopService()
                 result.success(null)
             }
             "seek" -> {
                 val pos = (call.argument<Int>("positionMs") ?: 0).toLong()
-                Log.d(TAG, "method:seek pos=$pos")
+                log("method:seek pos=$pos")
                 player?.seekTo(pos)
                 result.success(null)
             }
@@ -118,10 +118,7 @@ class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler, EventChannel.Str
         }
 
         player = ExoPlayer.Builder(context).build().also { exo ->
-            Log.d(
-                TAG,
-                "initPlayer connectTimeout=$connectTimeout readTimeout=$readTimeout headers=${headers.keys}"
-            )
+            log("initPlayer connectTimeout=$connectTimeout readTimeout=$readTimeout headers=${headers.keys}")
             exo.addListener(object : Player.Listener {
                 override fun onPlaybackStateChanged(playbackState: Int) {
                     when (playbackState) {
@@ -151,7 +148,7 @@ class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler, EventChannel.Str
                         )
                         else -> {}
                     }
-                    Log.d(TAG, "state=$playbackState pos=${exo.currentPosition} buffered=${exo.bufferedPosition}")
+                    log("state=$playbackState pos=${exo.currentPosition} buffered=${exo.bufferedPosition}")
                 }
 
                 override fun onPlayerError(error: PlaybackException) {
@@ -163,6 +160,7 @@ class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler, EventChannel.Str
                         )
                     )
                     Log.e(TAG, "playerError code=${error.errorCodeName}", error)
+                    println("Soundwave: playerError code=${error.errorCodeName} msg=${error.message}")
                 }
 
                 override fun onIsPlayingChanged(isPlaying: Boolean) {
@@ -215,7 +213,7 @@ class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler, EventChannel.Str
         val exo = player ?: run {
             result.error("invalid_state", "Player not initialized", null); return
         }
-        Log.d(TAG, "load source=$source scheme=${uri.scheme} range=[$rangeStart,$rangeEnd] headers=${headers.keys}")
+        log("load source=$source scheme=${uri.scheme} range=[$rangeStart,$rangeEnd] headers=${headers.keys}")
         exo.setMediaSource(mediaSource)
         exo.prepare()
         requestFocus()
@@ -237,7 +235,7 @@ class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler, EventChannel.Str
         val intent = Intent(context, ForegroundAudioService::class.java)
         context.startForegroundService(intent)
         serviceStarted = true
-        Log.d(TAG, "foreground service started")
+        log("foreground service started")
     }
 
     private fun stopService() {
@@ -245,7 +243,7 @@ class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler, EventChannel.Str
         val intent = Intent(context, ForegroundAudioService::class.java)
         context.stopService(intent)
         serviceStarted = false
-        Log.d(TAG, "foreground service stopped")
+        log("foreground service stopped")
     }
 
     // Audio focus
@@ -257,13 +255,13 @@ class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler, EventChannel.Str
             AudioManager.AUDIOFOCUS_GAIN
         )
         hasFocus = result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
-        Log.d(TAG, "requestAudioFocus result=$result granted=$hasFocus")
+        log("requestAudioFocus result=$result granted=$hasFocus")
     }
 
     private fun abandonFocus() {
         audioManager?.abandonAudioFocus(this)
         hasFocus = false
-        Log.d(TAG, "abandonAudioFocus")
+        log("abandonAudioFocus")
     }
 
     override fun onAudioFocusChange(focusChange: Int) {
@@ -291,7 +289,7 @@ class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler, EventChannel.Str
                 )
             }
         }
-        Log.d(TAG, "audioFocusChange=$focusChange playing=${player?.isPlaying}")
+        log("audioFocusChange=$focusChange playing=${player?.isPlaying}")
     }
 
     override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
@@ -306,5 +304,10 @@ class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler, EventChannel.Str
         private const val METHOD_CHANNEL_NAME = "soundwave_player"
         private const val EVENT_PREFIX = "soundwave_player/events"
         private const val TAG = "Soundwave"
+    }
+
+    private fun log(msg: String) {
+        Log.i(TAG, msg)
+        println("Soundwave: $msg")
     }
 }

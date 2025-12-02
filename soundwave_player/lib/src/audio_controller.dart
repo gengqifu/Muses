@@ -10,7 +10,10 @@ import 'spectrum_buffer.dart';
 /// Dart 层控制器占位实现：封装 SoundwavePlayer，管理状态流。
 class AudioController {
   AudioController({SoundwavePlayer? platform})
-      : _platform = platform ?? SoundwavePlayer();
+      : _platform = platform ?? SoundwavePlayer() {
+    // ignore: avoid_print
+    print('AudioController:created');
+  }
 
   final SoundwavePlayer _platform;
   bool _initialized = false;
@@ -28,11 +31,15 @@ class AudioController {
   AudioState get state => _state;
   PcmBuffer get pcmBuffer {
     _ensureInitialized();
+    // ignore: avoid_print
+    print('AudioController:pcmBuffer access');
     return _pcmBuffer!;
   }
 
   SpectrumBuffer get spectrumBuffer {
     _ensureInitialized();
+    // ignore: avoid_print
+    print('AudioController:spectrumBuffer access');
     return _spectrumBuffer!;
   }
 
@@ -40,7 +47,8 @@ class AudioController {
     if (_initialized) {
       throw StateError('AudioController has already been initialized');
     }
-
+    // ignore: avoid_print
+    print('AudioController:init ${config.toMap()}');
     await _platform.init(config);
     _stateSubscription = _platform.stateEvents.listen(_handlePlatformEvent);
     _pcmBuffer = PcmBuffer(stream: _platform.pcmEvents, maxFrames: 60);
@@ -51,6 +59,8 @@ class AudioController {
 
   Future<void> load(String source, {Map<String, Object?>? headers}) async {
     _ensureInitialized();
+    // ignore: avoid_print
+    print('AudioController:load $source');
     _emit(_state.copyWith(isBuffering: true, error: null));
     await _guardPlatformCall(() => _platform.load(source, headers: headers),
         onSuccess: () {
@@ -62,6 +72,8 @@ class AudioController {
 
   Future<void> play() async {
     _ensureInitialized();
+    // ignore: avoid_print
+    print('AudioController:play');
     await _guardPlatformCall(() => _platform.play(),
         onSuccess: () =>
             _emit(_state.copyWith(isPlaying: true, isBuffering: false, error: null)));
@@ -69,6 +81,8 @@ class AudioController {
 
   Future<void> pause() async {
     _ensureInitialized();
+    // ignore: avoid_print
+    print('AudioController:pause');
     await _guardPlatformCall(() => _platform.pause(),
         onSuccess: () =>
             _emit(_state.copyWith(isPlaying: false, isBuffering: false)));
@@ -76,6 +90,8 @@ class AudioController {
 
   Future<void> stop() async {
     _ensureInitialized();
+    // ignore: avoid_print
+    print('AudioController:stop');
     await _guardPlatformCall(() => _platform.stop(),
         onSuccess: () {
           _resetBuffers();
@@ -90,6 +106,8 @@ class AudioController {
 
   Future<void> seek(Duration position) async {
     _ensureInitialized();
+    // ignore: avoid_print
+    print('AudioController:seek ${position.inMilliseconds}ms');
     await _guardPlatformCall(() => _platform.seek(position),
         onSuccess: () {
           _resetBuffers();
