@@ -5,7 +5,7 @@
 
 ## 测试优先（TDD）
 - ✔ [1] 补充测试计划（占位）：约定事件格式、递增与节流规则如下。
-- ✖ [2] 添加占位/跳过用例：例如 `soundwave_player/test/android_pcm_fft_placeholder.dart`，构造模拟事件流验证 Dart 缓冲/波形组件消费数据（若缺运行环境则 `@Skip` 并写明原因）。
+- ✔ [2] 添加占位/跳过用例：例如 `soundwave_player/test/android_pcm_fft_placeholder.dart`，构造模拟事件流验证 Dart 缓冲/波形组件消费数据（若缺运行环境则 `@Skip` 并写明原因）。
 
 ## 开发任务
 - ✖ [3] 自定义 AudioProcessor/AudioSink hook：截获播放链路 PCM 16/32bit，保持播放正常，将帧写入旁路队列。
