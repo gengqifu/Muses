@@ -98,15 +98,15 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> _useBundledSample() async {
     try {
-      final data = await rootBundle.load('assets/audio/sample.wav');
+      final data = await rootBundle.load('assets/audio/sample.mp3');
       final dir = await getTemporaryDirectory();
-      final file = File('${dir.path}/sample.wav');
+      final file = File('${dir.path}/sample.mp3');
       await file.writeAsBytes(data.buffer.asUint8List());
       final path = 'file://${file.path}';
       setState(() {
         _sourceController.text = path;
       });
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('已拷贝示例音频到本地临时目录')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('已拷贝示例音频 sample.mp3 到本地临时目录')));
     } catch (e) {
       _showError('Load sample failed: $e');
     }
@@ -145,7 +145,7 @@ class _MyAppState extends State<MyApp> {
               Wrap(
                 spacing: 8,
                 children: [
-                  OutlinedButton(onPressed: _useBundledSample, child: const Text('Use bundled sample.wav')),
+                  OutlinedButton(onPressed: _useBundledSample, child: const Text('Use bundled sample.mp3')),
                 ],
               ),
               const SizedBox(height: 8),
