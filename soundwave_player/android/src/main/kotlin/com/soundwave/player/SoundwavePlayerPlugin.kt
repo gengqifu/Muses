@@ -414,6 +414,7 @@ class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler {
             )
           }
         }
+        log("pcmPush frames=${frames.size} dropped=$dropped ts=${player?.currentPosition}")
       } else if (dropped > 0) {
         notifyDropped(dropped)
       }
@@ -432,6 +433,7 @@ class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler {
     if (dropped <= 0) return
     pcmSink?.success(mapOf("dropped" to true, "droppedBefore" to dropped))
     spectrumSink?.success(mapOf("dropped" to true, "droppedBefore" to dropped))
+    log("notifyDropped $dropped")
   }
 
   private fun computeSpectrum(samples: FloatArray): Pair<FloatArray, Double>? {
