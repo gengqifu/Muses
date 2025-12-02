@@ -230,6 +230,13 @@ private class AudioTapProcessor {
   private var bytesPerFrame: UInt32 = 0
   private var sampleRate: Double = 0
   private var sequence: Int = 0
+  private let queue = DispatchQueue(label: "soundwave.pcm.tap")
+  private var timer: DispatchSourceTimer?
+  private var frames: [PcmFrame] = []
+  private var dropped: Int = 0
+  private let maxFrames: Int = 60
+  private let maxFramesPerTick: Int = 5
+  private let tickMillis: Int = 33
 
   init(player: AVPlayer?, sinkProvider: @escaping () -> FlutterEventSink?) {
     self.player = player
@@ -273,6 +280,12 @@ private class AudioTapProcessor {
     }
     tap = nil
     audioMix = nil
+    stopTimer()
+    queue.sync {
+      frames.removeAll()
+      dropped = 0
+      sequence = 0
+    }
   }
 
   private func handleBuffer(_ data: UnsafeMutableRawPointer?, frames: CMItemCount) {
@@ -293,12 +306,13 @@ private class AudioTapProcessor {
     let seq = sequence
     sequence += 1
 
-    DispatchQueue.main.async {
-      sink([
-        "sequence": seq,
-        "timestampMs": ts,
-        "samples": samples
-      ])
+    queue.async { [weak self] in
+      guard let self else { return }
+      if self.frames.count >= self.maxFrames {
+        self.frames.removeFirst()
+        self.dropped += 1
+      }
+      self.frames.append(PcmFrame(sequence: seq, timestampMs: ts, samples: samples))
     }
   }
 
@@ -307,6 +321,7 @@ private class AudioTapProcessor {
     bytesPerFrame = format.mBytesPerFrame
     sampleRate = format.mSampleRate
     sequence = 0
+    startTimer()
   }
 
   private func onUnprepare() {
@@ -314,6 +329,60 @@ private class AudioTapProcessor {
     bytesPerFrame = 0
     sampleRate = 0
     sequence = 0
+    stopTimer()
+    queue.sync {
+      frames.removeAll()
+      dropped = 0
+    }
+  }
+
+  private func startTimer() {
+    if timer != nil { return }
+    let t = DispatchSource.makeTimerSource(queue: queue)
+    t.schedule(deadline: .now(), repeating: .milliseconds(tickMillis))
+    t.setEventHandler { [weak self] in
+      self?.drainAndSend()
+    }
+    t.resume()
+    timer = t
+  }
+
+  private func stopTimer() {
+    timer?.cancel()
+    timer = nil
+  }
+
+  private func drainAndSend() {
+    guard let sink = sinkProvider() else {
+      frames.removeAll()
+      dropped = 0
+      return
+    }
+    if frames.isEmpty && dropped == 0 { return }
+
+    let count = min(maxFramesPerTick, frames.count)
+    let batch = Array(frames.prefix(count))
+    frames.removeFirst(count)
+    let droppedBefore = dropped
+    dropped = 0
+
+    DispatchQueue.main.async {
+      if batch.isEmpty {
+        sink(["dropped": true, "droppedBefore": droppedBefore])
+        return
+      }
+      for (index, frame) in batch.enumerated() {
+        var payload: [String: Any] = [
+          "sequence": frame.sequence,
+          "timestampMs": frame.timestampMs,
+          "samples": frame.samples
+        ]
+        if index == 0 && droppedBefore > 0 {
+          payload["droppedBefore"] = droppedBefore
+        }
+        sink(payload)
+      }
+    }
   }
 
   // MARK: - Tap callbacks
