@@ -298,7 +298,7 @@ private class AudioTapProcessor {
     tap = tapOut
 
     let params = AVMutableAudioMixInputParameters()
-    params.audioTapProcessor = tapOut
+    params.audioTapProcessor = tapOut.takeUnretainedValue()
     let mix = AVMutableAudioMix()
     mix.inputParameters = [params]
     audioMix = mix
@@ -306,8 +306,8 @@ private class AudioTapProcessor {
   }
 
   func detach() {
-    if let tap = tap?.takeUnretainedValue() {
-      MTAudioProcessingTapInvalidate(tap)
+    if let tapValue = tap?.takeUnretainedValue() {
+      MTAudioProcessingTapInvalidate(tapValue)
     }
     tap = nil
     audioMix = nil
