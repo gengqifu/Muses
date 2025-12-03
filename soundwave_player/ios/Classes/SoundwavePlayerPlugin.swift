@@ -1,6 +1,7 @@
 import Flutter
 import AVFoundation
 import MediaToolbox
+import AudioToolbox
 import CoreMedia
 import UIKit
 import Accelerate
