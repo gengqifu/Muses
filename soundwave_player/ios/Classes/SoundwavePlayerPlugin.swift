@@ -307,9 +307,6 @@ private class AudioTapProcessor {
   }
 
   func detach() {
-    if let tapValue = tap?.takeUnretainedValue() {
-      MTAudioProcessingTapInvalidate(tapValue)
-    }
     tap = nil
     audioMix = nil
     stopTimer()
