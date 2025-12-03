@@ -278,6 +278,11 @@ private class AudioTapProcessor {
   func attach(to item: AVPlayerItem) {
     detach()
 
+    guard let track = item.asset.tracks(withMediaType: .audio).first else {
+      log("no audio track for tap")
+      return
+    }
+
     var callbacks = MTAudioProcessingTapCallbacks(
       version: kMTAudioProcessingTapCallbacksVersion_0,
       clientInfo: UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque()),
@@ -298,7 +303,7 @@ private class AudioTapProcessor {
     }
     tap = tapOut
 
-    let params = AVMutableAudioMixInputParameters()
+    let params = AVMutableAudioMixInputParameters(track: track)
     params.audioTapProcessor = tapOut.takeUnretainedValue()
     let mix = AVMutableAudioMix()
     mix.inputParameters = [params]
@@ -533,7 +538,7 @@ extension SoundwavePlayerPlugin {
     do {
       try session.setCategory(.playback,
                               mode: .default,
-                              options: [.allowAirPlay, .allowBluetooth, .mixWithOthers])
+                              options: [])
       try session.setActive(true)
     } catch {
       emitState(["type": "error", "message": "AudioSession failed: \(error.localizedDescription)"])
