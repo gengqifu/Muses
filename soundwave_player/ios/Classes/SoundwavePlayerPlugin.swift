@@ -474,24 +474,20 @@ private class AudioTapProcessor {
     var timeRange = CMTimeRange()
     numberFramesOut.pointee = 0
 
-    // Allocate buffer list for interleaved PCM.
-    let mutableList = UnsafeMutableAudioBufferListPointer(bufferListInOut)
-    let byteCount = Int(numberFrames) * Int(processor.bytesPerFrame)
-    mutableList[0].mNumberChannels = processor.channelCount
-    mutableList[0].mDataByteSize = UInt32(byteCount)
-    mutableList[0].mData = UnsafeMutableRawPointer.allocate(byteCount: byteCount, alignment: MemoryLayout<Float32>.alignment)
-
     let status = MTAudioProcessingTapGetSourceAudio(tap,
                                                     numberFrames,
                                                     bufferListInOut,
                                                     &localFlags,
                                                     &timeRange,
                                                     numberFramesOut)
-    if status == noErr, let data = mutableList[0].mData, numberFramesOut.pointee > 0 {
-      processor.handleBuffer(data, frames: numberFramesOut.pointee)
+    if status == noErr,
+       let bufferListInOut = bufferListInOut,
+       numberFramesOut.pointee > 0 {
+      let mutableList = UnsafeMutableAudioBufferListPointer(bufferListInOut)
+      if let data = mutableList[0].mData {
+        processor.handleBuffer(data, frames: numberFramesOut.pointee)
+      }
     }
-
-    mutableList[0].mData?.deallocate()
   }
 
   private func computeSpectrum(samples: [Double]) -> (bins: [Double], binHz: Double)? {
