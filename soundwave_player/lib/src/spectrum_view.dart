@@ -62,7 +62,8 @@ class _SpectrumPainter extends CustomPainter {
     double maxMag = 0;
     for (final b in bins) {
       double m = b.magnitude.abs();
-      m = style.logScale ? (m > 0 ? log10(m) : 0) : math.log(m + 1); // log 压缩动态范围
+      // 仅在开启 logScale 时做对数压缩；默认保持线性，避免抬升噪声底导致假峰。
+      m = style.logScale ? (m > 0 ? log10(m) : 0) : m;
       processed.add(m);
       if (m > maxMag) maxMag = m;
     }
