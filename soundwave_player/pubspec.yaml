@@ -25,3 +25,5 @@ flutter:
         pluginClass: SoundwavePlayerPlugin
       ios:
         pluginClass: SoundwavePlayerPlugin
+  assets:
+    - test/assets/audio/
