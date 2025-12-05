@@ -90,4 +90,4 @@ await controller.play();
 ## 贡献
 - 欢迎提交 Issue/PR，遵循 TDD：先写失败用例再实现。
 - 代码格式：`flutter format`/`clang-format`；提交前跑通相关测试。
-- 讨论与设计：参见 `DESIGN.md`、`PRD.md`、`AGENTS.md` 保持上下文一致。
+- 讨论与设计：参见 `docs/design/0.0.2/TECH_DESIGN_0.0.2.md`、`docs/prd/0.0.2/PRD.md`、`AGENTS.md` 保持上下文一致。
