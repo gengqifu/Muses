@@ -5,12 +5,14 @@
 - FFT 库选型：Android 只使用 KissFFT（JNI）；iOS 默认使用 Accelerate/vDSP，同时提供可选 KissFFT（用于一致性/测试，demo 可切换）。
 - 将 PCM 波形与 FFT 频谱的采集/计算/导出能力从示例抽离为可复用库，支持 Maven（Android）与 pub（Flutter）发布，既可源码依赖也可二进制依赖。
 - 在移除 FFmpeg 后统一使用 Apache-2.0 许可证，更新文档与合规声明。
+- 新增测试工具场景：受测 App 已有解码能力，本插件作为旁路输出 PCM/频域数据，可保存为通用格式（如 WAV/CSV/JSON）供 PC 第三方音频分析；移动端可视化作为可选扩展/后门开关，播放过程中即时观察波形/谱。
 
 ## 2. 方案概览
 - 解码链路：ExoPlayer（MediaCodec）/AVFoundation 直出 PCM，保持现有环形缓冲与节流策略；FFmpeg/CMake 相关全部移除。
 - FFT：Android JNI 调用 C/C++ KissFFT（唯一实现，窗口化 + 功率谱）；iOS 默认 vDSP，提供可切换的 KissFFT 选项（用于一致性/低依赖场景）；两端保持统一窗口参数与输出格式。
 - 组件化：抽象“可视化管线”库，含 PCM tap、FFT、节流、事件模型与导出 API；Flutter 层提供 Dart 包包装；Android 侧提供独立 AAR。
 - License：切换为 Apache-2.0，删改 GPL 相关文本；确保依赖链（ExoPlayer、vDSP、KissFFT）与 License 兼容，并提供 NOTICE/DEPENDENCIES。
+- 测试工具输出：旁路 PCM/谱数据支持本地存储（WAV/CSV/JSON），可离线导出到 PC；移动端可视化为可选模块，由受测 App 通过隐藏开关调出。
 
 ## 3. 关键改动与接口
 ### 3.1 解码与数据流
@@ -30,6 +32,7 @@
 - iOS：抽出可视化能力为独立 CocoaPods（pod 名：`SoundwaveVisualization`）与 Swift Package（包名同 pod），封装 PCM tap + vDSP FFT（默认）+ KissFFT（可选）+ 节流/事件模型；支持 XCFramework/源码两种形态；版本与 Android/Dart 对齐（同主次版本）。
 - Flutter/Dart：新建 `soundwave_visualization` 包，暴露 `PcmFrame` / `SpectrumFrame` / 绘制组件；支持 path/pub 依赖；示例锁定同版本；遵循 semver，与原生产物的主次版本同步。
 - 示例/demo 仅作为集成验证，不再承载核心逻辑。
+- 测试工具扩展：提供可插拔“数据导出”模块（WAV/CSV/JSON）与“可视化后门”模块；受测 App 可按需依赖，仅导出不必引入 UI。
 
 ### 3.4 License
 - 目标 License：Apache-2.0（与 ExoPlayer/KissFFT/vDSP 兼容），作为仓库唯一 License。
@@ -39,9 +42,9 @@
 1) 移除 FFmpeg 依赖：清理 `ffmpeg/` 预编库、CMake/Gradle/Podspec 引用、解码代码路径；更新 README/CHANGELOG。
 2) 平台解码回归：验证本地/HTTP 源播放与 PCM 推送；补充弱网/seek 基本测试。
 3) FFT 替换：Android 接入 JNI + KissFFT，删除 Kotlin FFT 主路径；iOS 默认 vDSP + 可选 KissFFT，参数与归一化对齐；新增跨端交叉校验测试。
-4) 组件化拆分：抽取可视化管线为独立模块（Android AAR：`com.soundwave:visualization-core`；iOS Pod/SPM：`SoundwaveVisualization`；Dart 包：`soundwave_visualization`），调整插件引用路径，补发布配置（groupId/version/pom/Podspec/SPM）。
+4) 组件化拆分：抽取可视化管线为独立模块（Android AAR：`com.soundwave:visualization-core`；iOS Pod/SPM：`SoundwaveVisualization`；Dart 包：`soundwave_visualization`），并新增“数据导出”可选模块（WAV/CSV/JSON 输出）；调整插件引用路径，补发布配置（groupId/version/pom/Podspec/SPM）。
 5) License 切换：替换 LICENSE 文件与声明，生成 NOTICE/DEPENDENCIES，检查依赖许可，更新 README/CHANGELOG。
-6) 回归与基线：跑通 `flutter analyze`、`flutter test`、新增 FFT 对齐测试（Android JNI vs iOS vDSP vs iOS KissFFT 参考），长时间播放 smoke。
+6) 回归与基线：跑通 `flutter analyze`、`flutter test`、新增 FFT 对齐测试（Android JNI vs iOS vDSP vs iOS KissFFT 参考），长时间播放 smoke；新增数据导出正确性（PC 复核）与可视化后门开关验证。
 
 ## 5. 测试与验收
 - 单元测试：FFT 频点正确性（单频/双频/白噪），窗口与 nfft/overlap 参数覆盖；PCM 节流与序号递增。
