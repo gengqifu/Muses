@@ -9,18 +9,18 @@
 ## 2. 总体架构
 ```mermaid
 flowchart LR
-    Source[本地/HTTP\n(mp3,aac,wav,alac,flac)] -->|平台解码| Decoder
+    Source[Local/HTTP Source] -->|Platform Decode| Decoder
     Decoder -->|PCM 44.1kHz float32 stereo| Buffer[(RingBuffer)]
-    Buffer -->|节流分帧| Tap[PCM Tap]
-    Tap -->|Downmix+窗口+FFT| FFT[KissFFT(Android)\nvDSP/KissFFT(iOS)]
+    Buffer -->|Throttle Frames| Tap[PCM Tap]
+    Tap -->|Downmix + Window + FFT| FFT[KissFFT (Android)\nvDSP/KissFFT (iOS)]
     Tap -->|EventChannel| PCMStream[PCM Stream]
     FFT -->|EventChannel| FFTStream[Spectrum Stream]
-    PCMStream --> UIWave[Flutter UI\nWaveform]
-    FFTStream --> UISpec[Flutter UI\nSpectrum]
+    PCMStream --> UIWave[Flutter UI Waveform]
+    FFTStream --> UISpec[Flutter UI Spectrum]
     UIWave -->|MethodChannel| Control[Control: init/play/pause/seek]
     UISpec -->|MethodChannel| Control
-    Tap --> Export[导出\nWAV/CSV/JSON]
-    Export --> PC[PC 分析软件]
+    Tap --> Export[Export WAV/CSV/JSON]
+    Export --> PC[PC Analysis]
 ```
 
 ## 3. 分层架构
@@ -93,21 +93,21 @@ sequenceDiagram
 flowchart TD
     A[Init 44.1kHz/float32/stereo] --> B[Load Source]
     B --> C[Play]
-    C --> D[Decoder 输出 PCM]
+    C --> D[Decoder PCM Out]
     D --> E[RingBuffer]
-    E --> F[PCM Tap 节流分帧]
+    E --> F[PCM Tap Throttle]
     F --> G[Downmix (L+R)/2]
-    G --> H[窗口 Hann/Hamming]
+    G --> H[Window Hann/Hamming]
     H --> I[FFT\nAndroid KissFFT\niOS vDSP 或 KissFFT]
-    I --> J[功率谱归一化\n2/(N*E_window)]
-    J --> K[EventChannel spectrum]
-    F --> L[EventChannel pcm]
+    I --> J[Power Norm 2/(N*E_window)]
+    J --> K[EventChannel Spectrum]
+    F --> L[EventChannel PCM]
     K --> M[Flutter UI Spectrum]
     L --> N[Flutter UI Waveform]
-    M --> O[显示/交互]
+    M --> O[Display/Interact]
     N --> O
-    F --> P[导出 WAV/CSV/JSON]
-    P --> Q[PC 分析]
+    F --> P[Export WAV/CSV/JSON]
+    P --> Q[PC Analysis]
 ```
 
 ## 7. 接口与配置要点
