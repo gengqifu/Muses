@@ -13,6 +13,6 @@
 - ✅ [5] CI 增加 License 合规检查 Job：在 PR 阶段运行统一脚本（本地可复用），校验 LICENSE/NOTICE/DEPENDENCIES 存在且包含关键依赖（ExoPlayer Apache、KissFFT BSD、vDSP 专有），扫描仓库无 GPL 残留，失败阻断合并。（GitHub Actions `ci.yaml` 新增 `tools/check_license.sh` 步骤）
 
 ## 完成标准（DoD）
-- ✖️ [6] 合规检查通过，仓库无 GPL 文件/引用。
+- ✅ [6] 合规检查通过，仓库无 GPL 文件/引用。（`tools/check_license.sh` 已通过，LICENSE/NOTICE/DEPENDENCIES 就绪）
 - ✖️ [7] NOTICE/DEPENDENCIES 覆盖关键依赖并纳入发布流程。
 - ✖️ [8] 文档更新完成，构建/测试门禁通过。***
