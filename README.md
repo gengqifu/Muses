@@ -64,6 +64,10 @@ await controller.play();
 // UI 侧订阅 controller.states / pcmBuffer / spectrumBuffer 渲染。
 ```
 
+### 可视化后门（测试用）
+- 默认关闭；在测试/调试环境显式开启：`enableVisualizationBackdoor: true`，并在 UI 手势/隐藏开关中调用 `setVisualizationEnabled(true/false)`。
+- 示例：Demo 页面长按 AppBar 切换后门开关，关闭时缓冲静音丢弃事件，避免影响导出/实时链路；不建议在生产环境开启。
+
 ## 数据导出与校验
 - 开启导出：在 `SoundwaveConfig.export` 配置目录/前缀和开关，默认关闭。例如：
 ```dart
