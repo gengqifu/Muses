@@ -8,7 +8,7 @@
 - ✅ [2] 门禁：构建/格式/单测通过，CI 发布流程（dry-run）通过。（`flutter analyze`、`flutter test` 已跑通；后续 CI 发布步骤沿用）
 
 ## 开发任务
-- ✖️ [3] 配置 Maven 发布（groupId/artifactId/version/pom 元数据）。
+- ✅ [3] 配置 Maven 发布（groupId/artifactId/version/pom 元数据）。(`soundwave_player/android/build.gradle` 启用 maven-publish，产出 `com.soundwave:visualization-core:0.0.2`，默认发布到本地 m2)
 - ✖️ [4] 配置 CocoaPods/SwiftPM 包（名称、版本、binary/源码双形态）。
 - ✖️ [5] 配置 Dart pubspec/发布脚本；示例锁版本，文档补充接入方式。
 
