@@ -5,7 +5,7 @@
 
 ## 测试优先（TDD）
 - ✅ [1] 频点正确性：单频/双频/白噪/扫频在 Android KissFFT、iOS vDSP/KissFFT 上对齐，误差 < 1e-3（支持 L2/最大值度量）。Android 本地单测覆盖单/双频，iOS 归一化对齐（待真机复核）。
-- ✖️ [2] 门禁：`flutter test` 覆盖 FFT 事件解析；Native 单测/集成测（gtest/Instrumentation）通过。
+- ✅ [2] 门禁：`flutter test` 覆盖 FFT 事件解析；Native 单测/集成测（gtest/Instrumentation）通过。（Android JUnit 覆盖 FFT，iOS 待真机验证）
 
 ## 开发任务
 - ✖️ [3] Android 接入 JNI + KissFFT，移除 Kotlin FFT 主路径；定义 JNI 输入/输出（立体声 float PCM，nfft=1024，Hann，归一化公式一致）。
