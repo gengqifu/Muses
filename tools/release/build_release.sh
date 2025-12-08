@@ -20,13 +20,7 @@ mkdir -p "$ANDROID_OUT" "$IOS_OUT" "$DART_OUT"
 echo "==> Building Android AAR"
 (
   cd "$PLUGIN_DIR"
-  flutter build aar \
-    --no-debug \
-    --no-profile \
-    --target-platform android-arm,android-arm64,android-x64 \
-    --build-number 1 \
-    --build-name 0.0.2 \
-    --output-dir "$ANDROID_OUT"
+  ./android/gradlew publish -p android -PsoundwaveRepoDir="$ANDROID_OUT/m2-local"
 )
 
 echo "==> Building iOS XCFramework"
