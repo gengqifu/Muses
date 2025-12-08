@@ -7,6 +7,8 @@ import UIKit
 import Accelerate
 
 public class SoundwavePlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
+  // 可通过环境变量 SWIFT_FFT=1 或运行时修改此标志以切换到 Swift FFT（非 vDSP）。
+  public static var useSwiftFFT: Bool = ProcessInfo.processInfo.environment["SWIFT_FFT"] == "1"
   private var methodChannel: FlutterMethodChannel?
   private var stateEventChannel: FlutterEventChannel?
   private var stateSink: FlutterEventSink?
@@ -524,6 +526,13 @@ private class AudioTapProcessor {
     let n = 1024
     if samples.isEmpty || sampleRate <= 0 { return nil }
 
+    if SoundwavePlayerPlugin.useSwiftFFT {
+      return computeSpectrumSwift(samples: samples, n: n)
+    }
+    return computeSpectrumVdsp(samples: samples, n: n)
+  }
+
+  private func computeSpectrumVdsp(samples: [Double], n: Int) -> (bins: [Double], binHz: Double)? {
     var windowed = [Float](repeating: 0, count: n)
     let len = min(samples.count, n)
     for i in 0..<len {
@@ -559,6 +568,79 @@ private class AudioTapProcessor {
 
     let binHz = sampleRate / Double(n)
     return (magnitudes.map { Double($0) }, binHz)
+  }
+
+  // 纯 Swift FFT（Cooley-Tukey radix-2），用于禁用 vDSP 或调试对齐。
+  private func computeSpectrumSwift(samples: [Double], n: Int) -> (bins: [Double], binHz: Double)? {
+    var hann = [Double](repeating: 0, count: n)
+    var energy = 0.0
+    for i in 0..<n {
+      let w = 0.5 * (1.0 - cos((2.0 * Double.pi * Double(i)) / Double(n - 1)))
+      hann[i] = w
+      energy += w * w
+    }
+    energy /= Double(n)
+
+    var re = [Double](repeating: 0, count: n)
+    var im = [Double](repeating: 0, count: n)
+    let copy = min(samples.count, n)
+    for i in 0..<copy {
+      re[i] = samples[i] * hann[i]
+    }
+
+    var j = 0
+    for i in 1..<n {
+      var bit = n >> 1
+      while (j & bit) != 0 {
+        j ^= bit
+        bit >>= 1
+      }
+      j ^= bit
+      if i < j {
+        re.swapAt(i, j)
+        im.swapAt(i, j)
+      }
+    }
+
+    var lenM = 2
+    while lenM <= n {
+      let angle = -2.0 * Double.pi / Double(lenM)
+      let wLenRe = cos(angle)
+      let wLenIm = sin(angle)
+      var k = 0
+      while k < n {
+        var wRe = 1.0
+        var wIm = 0.0
+        var m = 0
+        while m < lenM / 2 {
+          let evenRe = re[k + m]
+          let evenIm = im[k + m]
+          let oddRe = re[k + m + lenM / 2]
+          let oddIm = im[k + m + lenM / 2]
+          let tRe = wRe * oddRe - wIm * oddIm
+          let tIm = wRe * oddIm + wIm * oddRe
+          re[k + m] = evenRe + tRe
+          im[k + m] = evenIm + tIm
+          re[k + m + lenM / 2] = evenRe - tRe
+          im[k + m + lenM / 2] = evenIm - tIm
+          let tmpRe = wRe
+          wRe = tmpRe * wLenRe - wIm * wLenIm
+          wIm = tmpRe * wLenIm + wIm * wLenRe
+          m += 1
+        }
+        k += lenM
+      }
+      lenM = lenM << 1
+    }
+
+    let scale = energy > 0 ? 2.0 / (Double(n) * energy) : 0.0
+    let half = n / 2
+    var mags = [Double](repeating: 0, count: half)
+    for i in 0..<half {
+      mags[i] = hypot(re[i], im[i]) * scale
+    }
+    let binHz = sampleRate / Double(n)
+    return (mags, binHz)
   }
 }
 
