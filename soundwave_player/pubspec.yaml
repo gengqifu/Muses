@@ -1,7 +1,10 @@
 name: soundwave_player
-description: Flutter plugin scaffold for SoundWave audio playback & visualization bridge.
-version: 0.0.1
-publish_to: "none"
+description: SoundWave audio playback & visualization bridge (waveform/spectrum/export).
+version: 0.0.2
+homepage: https://github.com/gengqifu/SoundWave
+repository: https://github.com/gengqifu/SoundWave
+issue_tracker: https://github.com/gengqifu/SoundWave/issues
+publish_to: "none" # 发布前去除本行
 
 environment:
   sdk: ">=3.2.0 <4.0.0"
