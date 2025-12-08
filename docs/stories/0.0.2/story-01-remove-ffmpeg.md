@@ -4,7 +4,7 @@
 - 移除 FFmpeg 依赖与二进制，改用 ExoPlayer/MediaCodec 与 AVFoundation 输出 44.1kHz/float32/stereo，保持 PCM/FFT 链路可用。
 
 ## 测试优先（TDD）
-- ✖️ [1] 本地/HTTP 播放回归：解码输出格式符合 44.1kHz/float32/stereo，PCM 事件节流正常。
+- ✅ [1] 本地/HTTP 播放回归：解码输出格式符合 44.1kHz/float32/stereo，PCM 事件节流正常。
 - ✖️ [2] 门禁：`flutter analyze`、`flutter test`、Android/iOS 基础构建通过。
 - ✖️ [3] Native gtest/NDK 单测：验证重采样/downmix 后格式（44.1kHz/float32/stereo）和值域、序列号/时间戳正确。
 - ✖️ [4] Android/iOS 平台集成测：解码输出采样率/位深/通道布局校验，替换 FFmpeg 后无回退。

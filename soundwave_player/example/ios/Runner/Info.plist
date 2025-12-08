@@ -50,5 +50,14 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
+	<!-- 向用户说明为何需要本地网络权限 -->
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>此权限用于在调试时连接Dart虚拟机，以实现热重载等功能。</string>
+
+	<!-- 声明应用使用的Bonjour服务（mDNS所需） -->
+	<key>NSBonjourServices</key>
+	<array>
+	<string>_dartobservatory._tcp</string>
+	</array>
 </dict>
 </plist>
