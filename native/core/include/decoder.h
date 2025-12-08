@@ -37,6 +37,5 @@ class Decoder {
 };
 
 std::unique_ptr<Decoder> CreateStubDecoder();
-std::unique_ptr<Decoder> CreateFFmpegDecoder();
 
 }  // namespace sw

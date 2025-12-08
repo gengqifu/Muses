@@ -77,15 +77,6 @@ class AudioEngineStub : public AudioEngine {
     }
     eof_emitted_.store(false);
     EnsureDecoder();
-    if (!decoder_->Open(source)) {
-#ifdef SW_ENABLE_FFMPEG
-      // Fallback to stub if FFmpeg decoder fails to open (e.g., missing file or unsupported).
-      decoder_ = CreateStubDecoder();
-      if (decoder_) {
-        decoder_->ConfigureOutput(last_sample_rate_, last_channels_);
-      }
-#endif
-    }
     if (decoder_ && !decoder_->Open(source)) {
       EmitState(PlaybackState::kIdle, decoder_->last_status());
       return decoder_->last_status();
@@ -204,11 +195,6 @@ class AudioEngineStub : public AudioEngine {
   std::atomic<bool> eof_emitted_{false};
 
   void EnsureDecoder() {
-#ifdef SW_ENABLE_FFMPEG
-    if (!decoder_) {
-      decoder_ = CreateFFmpegDecoder();
-    }
-#endif
     if (!decoder_) {
       decoder_ = CreateStubDecoder();
     }

@@ -37,7 +37,7 @@ const SpectrumStyle(
 - Flutter UI：`WaveformView`/`SpectrumView` 自定义绘制与交互，`AudioController` 管状态与命令。
 - Flutter 插件：`MethodChannel`/`EventChannel` 校验参数、映射错误码，串接平台桥接。
 - 平台桥接：最小化适配（权限/AudioSession/AudioFocus），调用共用的 C/C++ 核心。
-- C/C++ 核心：FFmpeg 解码 + 重采样 → 环形缓冲 → 回放线程；旁路分支做 FFT/DSP 并节流推送。
+- C/C++ 核心：平台解码输出 PCM 后进入环形缓冲 → 回放线程；旁路分支做 FFT/DSP 并节流推送（当前解码为桩实现，真实解码在平台层）。
 - 数据流：解码线程写缓冲，回放线程读缓冲并驱动时钟；FFT 线程复用 PCM 分帧；Dart 按节流帧率接收并绘制。
 
 ## 集成与构建
@@ -45,8 +45,7 @@ const SpectrumStyle(
 2) 依赖获取：在你的工程中添加 `soundwave_player`（本仓库可通过 path 依赖：`soundwave_player/`）。  
 3) iOS：`pod install` 由 Flutter 生成；确保已接受 Xcode 许可并配置开发者证书。  
 4) Android：使用 Android Studio / `flutter build apk`，确保 NDK/CMake 路径在 ANDROID_SDK 内。  
-5) FFmpeg：仓库已提供预编译包（`ffmpeg/`），CMake 会自动引用；如需自定义编解码，可替换对应静态库。  
-6) 示例运行：`cd soundwave_player/example && flutter run`（真机或模拟器）。
+5) 示例运行：`cd soundwave_player/example && flutter run`（真机或模拟器）。
 
 ## 插件 API 快览
 - `init(SoundwaveConfig config)`：采样率、缓冲大小、通道数、可视化节流配置。
@@ -67,7 +66,7 @@ await controller.play();
 
 ## 目录结构
 - `soundwave_player/`：Flutter 插件与示例。
-- `native/`：C/C++ 音频核心（FFmpeg/FFT 等）。
+- `native/`：C/C++ 音频核心（环形缓冲/播放线程/FFT）。
 - `docs/stories/<version>/`：迭代故事与任务记录（现有 0.0.1：`docs/stories/0.0.1/`）。
 - `DESIGN.md`：概要设计（架构/时序/交互图）。
 

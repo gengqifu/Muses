@@ -6,11 +6,11 @@
 - Flutter UI 层：负责 UI 渲染、交互、状态管理（推荐 Riverpod/BLoC），自定义波形/频谱绘制组件。
 - Flutter 插件层：Platform Channel 统一接口，负责参数校验、错误映射、线程切换；调用平台侧 C/C++ 核心。
 - 原生桥接层（iOS/Android）：少量平台适配（文件/网络权限、音频设备配置、AudioSession/AudioFocus），桥接 C/C++ 核心暴露的 API。
-- C/C++ 音频核心：跨平台共用代码基线。负责解码（FFmpeg/平台解码器封装）、重采样、环形缓冲、时钟、FFT/DSP、数据分发。
+- C/C++ 音频核心：跨平台共用代码基线。负责平台解码器输出的 PCM 整理（重采样/缓冲/时钟）、FFT/DSP、数据分发。
 
 ## 2. 关键模块
-- `AudioEngine`（C/C++）：驱动解码与回放，管理音频设备、时钟同步、环形缓冲。
-- `Decoder`：封装 FFmpeg（默认）/平台解码器，统一输出 PCM（float32/16bit 可配置）。
+- `AudioEngine`（C/C++）：管理回放时钟、环形缓冲、节流与回调（解码由平台侧负责）。
+- `Decoder`：平台解码器输出 PCM（float32/16bit 可配置），native 层仅保留桩以对齐接口。
 - `Resampler`：采样率转化与通道布局统一（立体声/单声道）。
 - `RingBuffer`：无锁/轻锁实现，支撑回放线程与处理线程的数据交换。
 - `DSP/FFT`：窗口化（Hann/Hamming），FFT（KissFFT/vDSP/Android FFT），计算功率谱/能量。
@@ -165,7 +165,7 @@ flowchart LR
       Platform[iOS/Android Adapter\n权限/音频设备]
     end
     subgraph Core["C/C++ 核心"]
-      Dec[Decoder\nFFmpeg/平台]
+      Dec[Decoder\n平台解码器]
       Buf[RingBuffer/Queue]
       PcmTap[PcmTap\n分帧/节流]
       Fft[DSP+FFT\n窗口化/功率谱]
