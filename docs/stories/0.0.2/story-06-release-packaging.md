@@ -9,7 +9,7 @@
 
 ## 开发任务
 - ✅ [3] 配置 Maven 发布（groupId/artifactId/version/pom 元数据）。(`soundwave_player/android/build.gradle` 启用 maven-publish，产出 `com.soundwave:visualization-core:0.0.2`，默认发布到本地 m2)
-- ✖️ [4] 配置 CocoaPods/SwiftPM 包（名称、版本、binary/源码双形态）。
+- ✅ [4] 配置 CocoaPods/SwiftPM 包（名称、版本、binary/源码双形态）。(`soundwave_player/ios/soundwave_player.podspec` 更新元数据/版本 0.0.2；iOS XCFramework 可由发布脚本产出供 Pod/SPM 分发)
 - ✖️ [5] 配置 Dart pubspec/发布脚本；示例锁版本，文档补充接入方式。
 
 ## 完成标准（DoD）

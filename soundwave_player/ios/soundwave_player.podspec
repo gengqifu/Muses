@@ -4,14 +4,14 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'soundwave_player'
-  s.version          = '0.0.1'
-  s.summary          = 'A new Flutter plugin project.'
+  s.version          = '0.0.2'
+  s.summary          = 'SoundWave audio visualization and export plugin.'
   s.description      = <<-DESC
-A new Flutter plugin project.
+SoundWave 提供音频可视化（波形/频谱）与数据导出能力的 Flutter 插件，内置 KissFFT/vDSP。
                        DESC
-  s.homepage         = 'http://example.com'
+  s.homepage         = 'https://github.com/gengqifu/SoundWave'
   s.license          = { :file => '../LICENSE' }
-  s.author           = { 'Your Company' => 'email@example.com' }
+  s.author           = { 'SoundWave Team' => 'dev@soundwave.local' }
   s.source           = { :path => '.' }
   s.source_files = 'Classes/**/*'
   s.dependency 'Flutter'
