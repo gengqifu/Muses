@@ -8,7 +8,7 @@
 - ✅ [2] 门禁：构建/测试通过（保证 License 变更不破坏构建流程）。(`flutter analyze`、`flutter test` 全量通过)
 
 ## 开发任务
-- ✖️ [3] 替换 LICENSE 文件，新增 NOTICE/DEPENDENCIES 生成流程（脚本/Gradle/Podspec）。
+- ✅ [3] 替换 LICENSE 文件，新增 NOTICE/DEPENDENCIES 生成流程（脚本/Gradle/Podspec）。(LICENSE 已换为 Apache-2.0；新增 NOTICE/DEPENDENCIES 与 `tools/check_license.sh`)
 - ✖️ [4] 更新 README/文档中的 License 声明。
 - ✖️ [5] CI 增加 License 合规检查 Job：在 PR 阶段运行统一脚本（本地可复用），校验 LICENSE/NOTICE/DEPENDENCIES 存在且包含关键依赖（ExoPlayer Apache、KissFFT BSD、vDSP 专有），扫描仓库无 GPL 残留，失败阻断合并。
 

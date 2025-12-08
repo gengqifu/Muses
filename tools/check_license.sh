@@ -25,8 +25,9 @@ grep -qi "KissFFT" DEPENDENCIES || error "DEPENDENCIES missing KissFFT entry"
 grep -qi "vDSP" DEPENDENCIES || error "DEPENDENCIES missing vDSP entry"
 
 echo "==> Scanning for GPL or forbidden licenses"
-# Simple grep for common GPL markers; ignore VCS/build outputs.
-if rg -i "gnu general public license|gpl-2\\.0|gpl-3\\.0" --hidden --iglob '!.git' --iglob '!build' --iglob '!.*cache' .; then
+# Simple grep for common GPL markers; ignore VCS/build outputs以及本检查脚本自身。
+if rg -i "gnu general public license|gpl-2\\.0|gpl-3\\.0" --hidden \
+  --iglob '!.git' --iglob '!build' --iglob '!.*cache' --iglob '!tools/check_license.sh' .; then
   error "Found potential GPL references; please remove or update dependencies"
 fi
 
