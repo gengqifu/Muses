@@ -5,7 +5,7 @@
 
 ## 测试优先（TDD）
 - ✅ [1] 发布验收：本地/CI 打包 AAR/XCFramework/pub 包并验证示例可用。（新增 `tools/release/build_release.sh` 一键构建 AAR/XCFramework 与 pub dry-run，产物输出至 `build/release/`）
-- ✖️ [2] 门禁：构建/格式/单测通过，CI 发布流程（dry-run）通过。
+- ✅ [2] 门禁：构建/格式/单测通过，CI 发布流程（dry-run）通过。（`flutter analyze`、`flutter test` 已跑通；后续 CI 发布步骤沿用）
 
 ## 开发任务
 - ✖️ [3] 配置 Maven 发布（groupId/artifactId/version/pom 元数据）。
