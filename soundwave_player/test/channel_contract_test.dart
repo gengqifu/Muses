@@ -30,7 +30,7 @@ void main() {
     test('init validates config and forwards to platform', () async {
       final player = SoundwavePlayer();
       await player.init(const SoundwaveConfig(
-          sampleRate: 48000,
+          sampleRate: 44100,
           bufferSize: 2048,
           channels: 2,
           pcmMaxFps: 30,
@@ -50,7 +50,7 @@ void main() {
       expect(
         call.arguments,
         <String, Object?>{
-          'sampleRate': 48000,
+          'sampleRate': 44100,
           'bufferSize': 2048,
           'channels': 2,
           'visualization': <String, Object?>{
@@ -76,10 +76,10 @@ void main() {
     test('init twice throws', () async {
       final player = SoundwavePlayer();
       await player.init(const SoundwaveConfig(
-          sampleRate: 48000, bufferSize: 2048, channels: 2));
+          sampleRate: 44100, bufferSize: 2048, channels: 2));
       expect(
         () => player.init(const SoundwaveConfig(
-            sampleRate: 48000, bufferSize: 2048, channels: 2)),
+            sampleRate: 44100, bufferSize: 2048, channels: 2)),
         throwsStateError,
       );
     });
@@ -87,7 +87,7 @@ void main() {
     test('load rejects empty source', () async {
       final player = SoundwavePlayer();
       await player.init(const SoundwaveConfig(
-          sampleRate: 48000, bufferSize: 2048, channels: 2));
+          sampleRate: 44100, bufferSize: 2048, channels: 2));
       expect(() => player.load(' '), throwsArgumentError);
     });
 
@@ -99,7 +99,7 @@ void main() {
     test('seek rejects negative position', () async {
       final player = SoundwavePlayer();
       await player.init(const SoundwaveConfig(
-          sampleRate: 48000, bufferSize: 2048, channels: 2));
+          sampleRate: 44100, bufferSize: 2048, channels: 2));
       expect(() => player.seek(const Duration(milliseconds: -1)),
           throwsArgumentError);
     });
@@ -112,7 +112,7 @@ void main() {
     test('play maps platform errors to domain exception', () async {
       final player = SoundwavePlayer();
       await player.init(const SoundwaveConfig(
-          sampleRate: 48000, bufferSize: 2048, channels: 2));
+          sampleRate: 44100, bufferSize: 2048, channels: 2));
       expect(
         () => player.play(),
         throwsA(isA<SoundwaveException>()
@@ -125,7 +125,7 @@ void main() {
     test('load forwards args with headers and range', () async {
       final player = SoundwavePlayer();
       await player.init(const SoundwaveConfig(
-          sampleRate: 48000, bufferSize: 2048, channels: 2));
+          sampleRate: 44100, bufferSize: 2048, channels: 2));
       await player.load('https://example.com/sample.mp3',
           headers: {'token': 'abc'}, rangeStart: 100, rangeEnd: 200);
       expect(calls.last.method, 'load');

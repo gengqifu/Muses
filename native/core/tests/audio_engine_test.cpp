@@ -75,7 +75,7 @@ TEST_F(AudioEngineTest, CallbacksCanBeSet) {
 TEST_F(AudioEngineTest, LoadMissingFileReturnsIoError) {
   ASSERT_NE(engine_, nullptr);
   AudioConfig cfg;
-  cfg.sample_rate = 48000;
+  cfg.sample_rate = 44100;
   cfg.channels = 2;
   ASSERT_EQ(engine_->Init(cfg), Status::kOk);
   EXPECT_EQ(engine_->Load("file:///tmp/missing.mp3"), Status::kIoError);
@@ -84,7 +84,7 @@ TEST_F(AudioEngineTest, LoadMissingFileReturnsIoError) {
 TEST_F(AudioEngineTest, LoadUnsupportedFormatReturnsNotSupported) {
   ASSERT_NE(engine_, nullptr);
   AudioConfig cfg;
-  cfg.sample_rate = 48000;
+  cfg.sample_rate = 44100;
   cfg.channels = 2;
   ASSERT_EQ(engine_->Init(cfg), Status::kOk);
   EXPECT_EQ(engine_->Load("file:///tmp/sample.txt"), Status::kNotSupported);
@@ -93,7 +93,7 @@ TEST_F(AudioEngineTest, LoadUnsupportedFormatReturnsNotSupported) {
 TEST_F(AudioEngineTest, PlayAdvancesPositionCallback) {
   ASSERT_NE(engine_, nullptr);
   AudioConfig cfg;
-  cfg.sample_rate = 48000;
+  cfg.sample_rate = 44100;
   cfg.channels = 2;
   cfg.frames_per_buffer = 128;
   cfg.pcm_max_fps = 30;
@@ -126,7 +126,7 @@ TEST_F(AudioEngineTest, PlayAdvancesPositionCallback) {
 TEST_F(AudioEngineTest, PlayPauseSeekStayInSyncWithinTolerance) {
   ASSERT_NE(engine_, nullptr);
   AudioConfig cfg;
-  cfg.sample_rate = 48000;
+  cfg.sample_rate = 44100;
   cfg.channels = 2;
   cfg.frames_per_buffer = 128;
   cfg.pcm_frames_per_push = 64;
@@ -174,7 +174,7 @@ TEST_F(AudioEngineTest, PlayPauseSeekStayInSyncWithinTolerance) {
 TEST_F(AudioEngineTest, ShortLoopPerfSmokeStaysNearWallClock) {
   ASSERT_NE(engine_, nullptr);
   AudioConfig cfg;
-  cfg.sample_rate = 48000;
+  cfg.sample_rate = 44100;
   cfg.channels = 2;
   cfg.frames_per_buffer = 480;  // ~10ms buffers for stable pacing.
   ASSERT_EQ(engine_->Init(cfg), Status::kOk);
@@ -262,7 +262,7 @@ TEST_F(AudioEngineTest, StateEventsCoverReadyPlayPauseStop) {
 TEST_F(AudioEngineTest, LoadErrorEmitsStateWithStatus) {
   ASSERT_NE(engine_, nullptr);
   AudioConfig cfg;
-  cfg.sample_rate = 48000;
+  cfg.sample_rate = 44100;
   cfg.channels = 2;
   ASSERT_EQ(engine_->Init(cfg), Status::kOk);
 
@@ -282,7 +282,7 @@ TEST_F(AudioEngineTest, LoadErrorEmitsStateWithStatus) {
 TEST_F(AudioEngineTest, SeekClearsBufferAndResetsClocks) {
   ASSERT_NE(engine_, nullptr);
   AudioConfig cfg;
-  cfg.sample_rate = 48000;
+  cfg.sample_rate = 44100;
   cfg.channels = 2;
   cfg.frames_per_buffer = 240;  // 5ms-ish to generate more callbacks.
   cfg.pcm_max_fps = 120;
@@ -337,7 +337,7 @@ TEST(DecoderStubTest, OpenAndRead) {
   ASSERT_TRUE(dec->Open("file:///tmp/sample.mp3"));
   PcmBuffer buf;
   EXPECT_FALSE(dec->Read(buf));  // EOF
-  EXPECT_EQ(buf.sample_rate, 48000);
+  EXPECT_EQ(buf.sample_rate, 44100);
   EXPECT_EQ(buf.channels, 2);
   EXPECT_EQ(dec->last_status(), Status::kOk);
 }

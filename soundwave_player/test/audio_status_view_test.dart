@@ -15,7 +15,7 @@ void main() {
       platform = FakePlatform();
       controller = AudioController(platform: platform);
       await controller.init(const SoundwaveConfig(
-          sampleRate: 48000, bufferSize: 1024, channels: 2));
+          sampleRate: 44100, bufferSize: 1024, channels: 2));
     });
 
     tearDown(() {

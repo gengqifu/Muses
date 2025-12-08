@@ -9,7 +9,7 @@
 namespace sw {
 
 struct AudioConfig {
-  int sample_rate = 48000;
+  int sample_rate = 44100;
   int channels = 2;
   int frames_per_buffer = 0;  // optional override.
   // PCM 可视化相关配置。

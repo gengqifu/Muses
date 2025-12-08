@@ -336,11 +336,23 @@ private class AudioTapProcessor {
           channelCount > 0,
           frames > 0 else { return }
 
-    let samplesCount = Int(frames * CMItemCount(channelCount))
+    let ch = Int(channelCount)
+    let samplesCount = Int(frames) * ch
     let floatPtr = data.assumingMemoryBound(to: Float32.self)
-    var samples = [Double](repeating: 0, count: samplesCount)
-    for i in 0..<samplesCount {
-      samples[i] = Double(floatPtr[i])
+    // Downmix/upsample to stereo interleaved to keep UI contract stable.
+    let framesCount = Int(frames)
+    var stereo = [Double](repeating: 0, count: framesCount * 2)
+    for i in 0..<framesCount {
+      let base = i * ch
+      let left = Double(floatPtr[base])
+      let right: Double
+      if ch >= 2 {
+        right = Double(floatPtr[base + 1])
+      } else {
+        right = left
+      }
+      stereo[i * 2] = left
+      stereo[i * 2 + 1] = right
     }
 
     let ts = player?.currentPositionMs ?? 0
@@ -353,7 +365,7 @@ private class AudioTapProcessor {
         self.frames.removeFirst()
         self.dropped += 1
       }
-      self.frames.append(PcmFrame(sequence: seq, timestampMs: ts, samples: samples))
+      self.frames.append(PcmFrame(sequence: seq, timestampMs: ts, samples: stereo))
     }
   }
 

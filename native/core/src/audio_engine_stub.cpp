@@ -177,7 +177,7 @@ class AudioEngineStub : public AudioEngine {
  private:
   bool initialized_ = false;
   bool loaded_ = false;
-  int last_sample_rate_ = 48000;
+  int last_sample_rate_ = 44100;
   int last_channels_ = 2;
   AudioConfig cfg_;
   PlaybackState playback_state_ = PlaybackState::kIdle;

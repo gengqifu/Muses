@@ -17,7 +17,7 @@ namespace sw {
 TEST(PlaybackThreadTest, PositionIsMonotonicWithProducer) {
   RingBuffer buffer(4096, 2);
   PlaybackConfig cfg;
-  cfg.sample_rate = 48000;
+  cfg.sample_rate = 44100;
   cfg.channels = 2;
   cfg.frames_per_buffer = 128;
   PlaybackThread playback(buffer, cfg);
@@ -67,7 +67,7 @@ TEST(PlaybackThreadTest, PositionIsMonotonicWithProducer) {
 TEST(PlaybackThreadTest, StopsCleanlyWithoutData) {
   RingBuffer buffer(256, 1);
   PlaybackConfig cfg;
-  cfg.sample_rate = 48000;
+  cfg.sample_rate = 44100;
   cfg.channels = 1;
   cfg.frames_per_buffer = 64;
   PlaybackThread playback(buffer, cfg);

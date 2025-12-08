@@ -8,7 +8,7 @@
 namespace sw {
 
 TEST(FftSpectrumTest, SingleToneHasPeakAtExpectedBin) {
-  const int sample_rate = 48000;
+  const int sample_rate = 44100;
   const int window = 1024;
   const float freq = 1000.0f;
   std::vector<float> samples(window);

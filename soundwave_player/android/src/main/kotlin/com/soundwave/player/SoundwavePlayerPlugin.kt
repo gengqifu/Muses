@@ -50,7 +50,7 @@ class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler {
   private var hasFocus: Boolean = false
   private var serviceStarted: Boolean = false
   private val pcmProcessor = PcmTapProcessor()
-  private var sampleRate: Int = 48000
+  private var sampleRate: Int = 44100
   private var pcmWorker: HandlerThread? = null
   private var pcmHandler: Handler? = null
   private val mainHandler = Handler(Looper.getMainLooper())

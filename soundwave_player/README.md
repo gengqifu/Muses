@@ -18,7 +18,7 @@ import 'package:soundwave_player/soundwave_player.dart';
 final player = SoundwavePlayer();
 
 Future<void> init() async {
-  await player.init(const SoundwaveConfig(sampleRate: 48000, bufferSize: 2048, channels: 2));
+  await player.init(const SoundwaveConfig(sampleRate: 44100, bufferSize: 2048, channels: 2));
   await player.load('file:///tmp/sample.mp3');
   await player.play();
 }
@@ -65,18 +65,18 @@ const SpectrumStyle(
 ### ffmpeg 生成测试音频示例（单声道 48 kHz）
 ```bash
 # 正弦 1 kHz，1s
-ffmpeg -f lavfi -i "sine=frequency=1000:sample_rate=48000:duration=1" sine_1k.wav
+ffmpeg -f lavfi -i "sine=frequency=1000:sample_rate=44100:duration=1" sine_1k.wav
 # 方波 1 kHz（使用 sgn），1s
-ffmpeg -f lavfi -i "aevalsrc=exprs=sgn(sin(2*PI*1000*t)):s=48000:d=1" square_1k.wav
+ffmpeg -f lavfi -i "aevalsrc=exprs=sgn(sin(2*PI*1000*t)):s=44100:d=1" square_1k.wav
 # 锯齿波 1 kHz，1s
-ffmpeg -f lavfi -i "aevalsrc=exprs=2*(t*1000-floor(t*1000))-1:s=48000:d=1" saw_1k.wav
+ffmpeg -f lavfi -i "aevalsrc=exprs=2*(t*1000-floor(t*1000))-1:s=44100:d=1" saw_1k.wav
 # 白噪声/粉噪，1s
-ffmpeg -f lavfi -i "anoisesrc=color=white:amplitude=0.5:d=1:s=48000" noise_white.wav
-ffmpeg -f lavfi -i "anoisesrc=color=pink:amplitude=0.5:d=1:s=48000" noise_pink.wav
+ffmpeg -f lavfi -i "anoisesrc=color=white:amplitude=0.5:d=1:s=44100" noise_white.wav
+ffmpeg -f lavfi -i "anoisesrc=color=pink:amplitude=0.5:d=1:s=44100" noise_pink.wav
 # 线性扫频 20Hz->20kHz，5s（手写公式，兼容旧 ffmpeg）
-ffmpeg -f lavfi -i "aevalsrc=exprs=sin(2*PI*(20*t + 0.5*((20000-20)/5)*t*t)):s=48000:d=5" sweep_20_20k.wav
+ffmpeg -f lavfi -i "aevalsrc=exprs=sin(2*PI*(20*t + 0.5*((20000-20)/5)*t*t)):s=44100:d=5" sweep_20_20k.wav
 # 静音，1s
-ffmpeg -f lavfi -i "anullsrc=cl=mono:r=48000:d=1" silence.wav
+ffmpeg -f lavfi -i "anullsrc=cl=mono:r=44100:d=1" silence.wav
 ```
 
 ## 开发

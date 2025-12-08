@@ -12,7 +12,7 @@
 namespace sw {
 
 struct PlaybackConfig {
-  int sample_rate = 48000;
+  int sample_rate = 44100;
   int channels = 2;
   int frames_per_buffer = 0;  // if 0, a default will be chosen.
 };

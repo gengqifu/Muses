@@ -24,7 +24,7 @@ void main() {
 
     test('emits state updates from platform events', () async {
       await controller.init(
-          const SoundwaveConfig(sampleRate: 48000, bufferSize: 1024, channels: 2));
+          const SoundwaveConfig(sampleRate: 44100, bufferSize: 1024, channels: 2));
 
       final states = <AudioState>[];
       final sub = controller.states.listen(states.add);
@@ -49,7 +49,7 @@ void main() {
 
     test('error events surface in state', () async {
       await controller.init(
-          const SoundwaveConfig(sampleRate: 48000, bufferSize: 1024, channels: 2));
+          const SoundwaveConfig(sampleRate: 44100, bufferSize: 1024, channels: 2));
       final errors = controller.states.where((s) => s.error != null);
 
       platform.emitState(<String, Object?>{
@@ -63,7 +63,7 @@ void main() {
 
     test('load failure clears buffering flag and surfaces error', () async {
       await controller.init(
-          const SoundwaveConfig(sampleRate: 48000, bufferSize: 1024, channels: 2));
+          const SoundwaveConfig(sampleRate: 44100, bufferSize: 1024, channels: 2));
       platform.shouldThrow = true;
 
       await expectLater(controller.load('file://sample'), throwsStateError);
@@ -73,7 +73,7 @@ void main() {
 
     test('exposes pcm/spectrum buffers and drains platform events by timestamp order', () async {
       await controller.init(
-          const SoundwaveConfig(sampleRate: 48000, bufferSize: 1024, channels: 2));
+          const SoundwaveConfig(sampleRate: 44100, bufferSize: 1024, channels: 2));
 
       platform.emitPcm(<String, Object?>{
         'sequence': 1,
@@ -101,7 +101,7 @@ void main() {
 
     test('seek resets buffers to accept earlier timestamps', () async {
       await controller.init(
-          const SoundwaveConfig(sampleRate: 48000, bufferSize: 1024, channels: 2));
+          const SoundwaveConfig(sampleRate: 44100, bufferSize: 1024, channels: 2));
       platform.emitPcm(<String, Object?>{
         'sequence': 1,
         'timestampMs': 100,

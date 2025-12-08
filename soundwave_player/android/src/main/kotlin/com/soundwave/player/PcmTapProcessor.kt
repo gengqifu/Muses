@@ -60,22 +60,19 @@ class PcmTapProcessor : BaseAudioProcessor() {
       else -> FloatArray(0)
     }
 
-    // Downmix multi-channel PCM to mono to avoid interleaved L/R introducing artificial high-frequency
-    // energy in FFT and to keep waveform consistent across channels.
-    val mono = if (channelCount <= 1 || samples.isEmpty()) {
-      samples
-    } else {
-      val frames = samples.size / channelCount
-      val mixed = FloatArray(frames)
-      for (i in 0 until frames) {
-        var sum = 0f
-        for (ch in 0 until channelCount) {
-          val idx = i * channelCount + ch
-          if (idx < samples.size) sum += samples[idx]
-        }
-        mixed[i] = sum / channelCount
+    // Downmix/upsample channel layout to stereo (interleaved) to keep UI path consistent.
+    val frames = if (channelCount > 0) samples.size / channelCount else samples.size
+    val stereo = FloatArray(frames * 2)
+    for (i in 0 until frames) {
+      val base = i * channelCount
+      val left = if (channelCount >= 1 && base < samples.size) samples[base] else 0f
+      val right = if (channelCount >= 2 && base + 1 < samples.size) {
+        samples[base + 1]
+      } else {
+        left // mono: duplicate to right
       }
-      mixed
+      stereo[i * 2] = left
+      stereo[i * 2 + 1] = right
     }
 
     if (queue.size >= maxQueueFrames) {
@@ -83,7 +80,7 @@ class PcmTapProcessor : BaseAudioProcessor() {
       queue.poll()
       droppedCounter.incrementAndGet()
     }
-    queue.add(PcmFrame(sequence++, SystemClock.elapsedRealtime(), mono))
+    queue.add(PcmFrame(sequence++, SystemClock.elapsedRealtime(), stereo))
   }
 
   override fun onQueueEndOfStream() {

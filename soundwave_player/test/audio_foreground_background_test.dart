@@ -12,7 +12,7 @@ void main() {
       platform = FakePlatform();
       controller = AudioController(platform: platform);
       await controller.init(
-          const SoundwaveConfig(sampleRate: 48000, bufferSize: 1024, channels: 2));
+          const SoundwaveConfig(sampleRate: 44100, bufferSize: 1024, channels: 2));
       await controller.load('file:///tmp/sample.mp3');
       await controller.play();
     });

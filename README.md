@@ -58,7 +58,7 @@ const SpectrumStyle(
 - 示例用法：
 ```dart
 final controller = AudioController();
-await controller.init(const SoundwaveConfig(sampleRate: 48000, bufferSize: 2048, channels: 2));
+await controller.init(const SoundwaveConfig(sampleRate: 44100, bufferSize: 2048, channels: 2));
 await controller.load('file:///tmp/sample.mp3');
 await controller.play();
 // UI 侧订阅 controller.states / pcmBuffer / spectrumBuffer 渲染。

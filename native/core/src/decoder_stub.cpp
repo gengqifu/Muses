@@ -78,7 +78,7 @@ class DecoderStub : public Decoder {
   }
 
   bool opened_ = false;
-  int sample_rate_ = 48000;
+  int sample_rate_ = 44100;
   int channels_ = 2;
   std::string source_;
   Status last_status_ = Status::kOk;
