@@ -12,6 +12,7 @@ class SoundwaveConfig {
   final bool? enableRangeRequests;
   final int? ringBufferMs;
   final bool? enableSkiaTracing;
+  final bool enableVisualizationBackdoor;
   final ExportConfig? export;
 
   const SoundwaveConfig({
@@ -28,6 +29,7 @@ class SoundwaveConfig {
     this.enableRangeRequests,
     this.ringBufferMs,
     this.enableSkiaTracing,
+    this.enableVisualizationBackdoor = false,
     this.export,
   });
 
@@ -93,6 +95,7 @@ class SoundwaveConfig {
     if (spectrumMaxFps != null) visualization['spectrumMaxFps'] = spectrumMaxFps;
     if (spectrumMaxPending != null) visualization['spectrumMaxPending'] = spectrumMaxPending;
     if (enableSkiaTracing != null) visualization['enableSkiaTracing'] = enableSkiaTracing;
+    if (enableVisualizationBackdoor) visualization['enableBackdoor'] = true;
     if (visualization.isNotEmpty) {
       map['visualization'] = visualization;
     }

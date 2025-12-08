@@ -8,7 +8,7 @@
 - ✅ [2] 门禁：相关 Widget/集成测试通过，`flutter analyze`、`flutter test` 通过（包含开关行为单测）。
 
 ## 开发任务
-- ✖️ [3] 定义后门开关接口与安全策略（仅测试环境可用），实现 UI 挂载/卸载。
+- ✅ [3] 定义后门开关接口与安全策略（仅测试环境可用），实现 UI 挂载/卸载。（`SoundwaveConfig.enableVisualizationBackdoor` 需显式开启，`setVisualizationEnabled` 未授权直接抛错；示例通过 AppBar 长按切换）
 - ✖️ [4] 确保与导出模块兼容，不引入额外性能回退。
 - ✖️ [5] 文档/示例更新：说明开启方式与限制。
 

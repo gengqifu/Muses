@@ -53,7 +53,12 @@ class _MyAppState extends State<MyApp> {
   Future<void> _init() async {
     try {
       debugPrint('Demo: init() start');
-      await _controller.init(const SoundwaveConfig(sampleRate: 44100, bufferSize: 2048, channels: 2));
+      await _controller.init(const SoundwaveConfig(
+        sampleRate: 44100,
+        bufferSize: 2048,
+        channels: 2,
+        enableVisualizationBackdoor: true, // 仅示例/测试环境开启
+      ));
       _controller.states.listen((s) {
         setState(() {
           _state = s;

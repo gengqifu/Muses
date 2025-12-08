@@ -23,8 +23,12 @@ void main() {
     });
 
     test('emits state updates from platform events', () async {
-      await controller.init(
-          const SoundwaveConfig(sampleRate: 44100, bufferSize: 1024, channels: 2));
+      await controller.init(const SoundwaveConfig(
+        sampleRate: 44100,
+        bufferSize: 1024,
+        channels: 2,
+        enableVisualizationBackdoor: true,
+      ));
 
       final states = <AudioState>[];
       final sub = controller.states.listen(states.add);
@@ -48,8 +52,12 @@ void main() {
     });
 
     test('error events surface in state', () async {
-      await controller.init(
-          const SoundwaveConfig(sampleRate: 44100, bufferSize: 1024, channels: 2));
+      await controller.init(const SoundwaveConfig(
+        sampleRate: 44100,
+        bufferSize: 1024,
+        channels: 2,
+        enableVisualizationBackdoor: true,
+      ));
       final errors = controller.states.where((s) => s.error != null);
 
       platform.emitState(<String, Object?>{
@@ -122,8 +130,12 @@ void main() {
     });
 
     test('visualization toggle pauses/resumes buffers', () async {
-      await controller.init(
-          const SoundwaveConfig(sampleRate: 44100, bufferSize: 1024, channels: 2));
+      await controller.init(const SoundwaveConfig(
+        sampleRate: 44100,
+        bufferSize: 1024,
+        channels: 2,
+        enableVisualizationBackdoor: true,
+      ));
 
       controller.setVisualizationEnabled(false);
       platform.emitPcm(<String, Object?>{

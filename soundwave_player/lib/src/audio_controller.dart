@@ -26,6 +26,7 @@ class AudioController {
   DataExporter? _exporter;
   StreamSubscription<dynamic>? _exportPcmSub;
   StreamSubscription<dynamic>? _exportSpectrumSub;
+  bool _backdoorAllowed = false;
   bool _visualizationEnabled = true;
 
   /// 状态流（后续实现）。
@@ -60,6 +61,7 @@ class AudioController {
     _stateSubscription = _platform.stateEvents.listen(_handlePlatformEvent);
     _pcmBuffer = PcmBuffer(stream: _platform.pcmEvents, maxFrames: 60);
     _spectrumBuffer = SpectrumBuffer(stream: _platform.spectrumEvents, maxFrames: 60);
+    _backdoorAllowed = config.enableVisualizationBackdoor;
     if (config.export != null) {
       final exp = config.export!;
       _exporter = DataExporter(DataExportOptions(
@@ -145,6 +147,9 @@ class AudioController {
   /// 控制可视化订阅开关：关闭时暂停缓冲队列，避免 UI/后门读取。
   void setVisualizationEnabled(bool enabled) {
     _ensureInitialized();
+    if (!_backdoorAllowed) {
+      throw StateError('Visualization backdoor is disabled by config');
+    }
     if (_visualizationEnabled == enabled) return;
     _visualizationEnabled = enabled;
     if (!enabled) {
