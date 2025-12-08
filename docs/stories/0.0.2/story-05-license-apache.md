@@ -5,7 +5,7 @@
 
 ## 测试优先（TDD）
 - ✅ [1] 合规检查：脚本或 CI 检查确保无 GPL 残留，NOTICE/DEPENDENCIES 含关键依赖。（新增 `tools/check_license.sh`，生成 NOTICE/DEPENDENCIES）
-- ✖️ [2] 门禁：构建/测试通过（保证 License 变更不破坏构建流程）。
+- ✅ [2] 门禁：构建/测试通过（保证 License 变更不破坏构建流程）。(`flutter analyze`、`flutter test` 全量通过)
 
 ## 开发任务
 - ✖️ [3] 替换 LICENSE 文件，新增 NOTICE/DEPENDENCIES 生成流程（脚本/Gradle/Podspec）。
