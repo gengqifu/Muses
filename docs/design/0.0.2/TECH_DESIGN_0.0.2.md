@@ -112,7 +112,7 @@ flowchart TD
 ## 7. 接口与配置要点
 - 解码输出：固定 44.1kHz/float32/stereo，必要时重采样；FFT 输入前 downmix。
 - FFT 默认：Hann，nfft=1024，overlap=50%，归一化 `2/(N*E_window)`，跨端容差 < 1e-3。
-- iOS FFT 选择：默认 vDSP，可在 demo/配置中切换 KissFFT（与 Android 对齐）。
+- iOS FFT 选择：默认 vDSP，可在 demo/配置中切换 Swift FFT 后备（或后续 KissFFT）；输出格式/归一化与 Android 对齐。
 - 发布命名：Android `com.soundwave:visualization-core`，iOS Pod/SPM `SoundwaveVisualization`，Dart `soundwave_visualization`，版本 semver 对齐。
 - 数据导出：支持 PCM → WAV（44.1kHz/float32/stereo）、谱数据 → CSV/JSON（含 binHz/seq/ts）；导出模块可独立依赖，无需引入 UI。
 

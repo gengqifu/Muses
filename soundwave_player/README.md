@@ -62,7 +62,7 @@ const SpectrumStyle(
 5) 如谱偏左/右，可切换 `SpectrumStyle(freqLogScale: false)` 看线性频率轴；多声道源若下混，谱为平均。  
 6) 更严格可录屏/截屏，与离线工具（Python/ffmpeg 绘制的谱）对比峰值位置和形状，容忍窗函数带来的主瓣宽度与旁瓣。
 
-### ffmpeg 生成测试音频示例（单声道 48 kHz）
+### ffmpeg 生成测试音频示例（单声道 44.1 kHz，Hann + 2/(N*E_window) 归一化验证）
 ```bash
 # 正弦 1 kHz，1s
 ffmpeg -f lavfi -i "sine=frequency=1000:sample_rate=44100:duration=1" sine_1k.wav
@@ -84,6 +84,7 @@ ffmpeg -f lavfi -i "anullsrc=cl=mono:r=44100:d=1" silence.wav
 - 格式化：`HOME=/your/writable/home dart format lib test example/lib`
 - 静态检查：`HOME=/your/writable/home flutter analyze`
 - 单元测试：`HOME=/your/writable/home flutter test`
+- Android JNI/KissFFT：Gradle 构建自动编译 `soundwave_fft`，KissFFT 源码在 `android/src/main/cpp/kissfft`，回退路径为 Kotlin 版 FFT。
 
 ## Demo
 
@@ -94,6 +95,6 @@ ffmpeg -f lavfi -i "anullsrc=cl=mono:r=44100:d=1" silence.wav
 
 - iOS：宿主 App 需在 Xcode 中开启 Background Modes（Audio），`Info.plist` 增加 `UIBackgroundModes = audio`。插件已配置 `AVAudioSessionCategoryPlayback` 并监听中断/路由变更，后台播放权限需由宿主工程启用。
 - iOS 隐私：`ios/Resources/PrivacyInfo.xcprivacy` 已声明音频数据访问及必要 API 访问（时间戳、UserDefaults），如有自定义用途请补充。
-- Android：目前未启用通知栏/前台 Service，如需后台播放请在宿主应用添加前台 Service 与通知渠道，并配置 `android.permission.FOREGROUND_SERVICE`/`INTERNET`。
+- Android：目前未启用通知栏/前台 Service，如需后台播放请在宿主应用添加前台 Service 与通知渠道，并配置 `android.permission.FOREGROUND_SERVICE`/`INTERNET`；FFT 由 JNI KissFFT 完成，默认输出 44.1kHz/float32 立体声，频谱归一化与 iOS 对齐。
 
 > 使用本仓库的建议 HOME（避免 lockfile 权限问题）：`/Users/gengqifu/git/ext/SoundWave/.home`

@@ -4,7 +4,7 @@
 ## 功能
 - 播放本地/流式音频（ExoPlayer/AVPlayer），支持播放控制与前后台切换。
 - 实时波形渲染：PCM 分帧抽稀绘制，支持背景/颜色/线宽配置。
-- 实时频谱渲染：Hann 窗口 + FFT，支持对数频率轴（默认）或线性轴、幅度压缩。
+- 实时频谱渲染：Hann 窗口 + FFT（Android KissFFT JNI，iOS vDSP，可选 Swift FFT 后备），支持对数频率轴（默认）或线性轴、幅度压缩。
 - 数据节流：PCM/频谱事件按 FPS 和批次推送，降低 Platform Channel 开销。
 
 ## 快速开始
@@ -42,7 +42,7 @@ const SpectrumStyle(
 
 ## 集成与构建
 1) 环境：Flutter 3.x（稳定版）、Xcode 15+（iOS），Android SDK 34+、NDK r26、CMake（随 Android SDK 安装）。  
-2) 依赖获取：在你的工程中添加 `soundwave_player`（本仓库可通过 path 依赖：`soundwave_player/`）。  
+2) 依赖获取：在你的工程中添加 `soundwave_player`（本仓库可通过 path 依赖：`soundwave_player/`，Android 默认编译 JNI KissFFT）。  
 3) iOS：`pod install` 由 Flutter 生成；确保已接受 Xcode 许可并配置开发者证书。  
 4) Android：使用 Android Studio / `flutter build apk`，确保 NDK/CMake 路径在 ANDROID_SDK 内。  
 5) 示例运行：`cd soundwave_player/example && flutter run`（真机或模拟器）。
