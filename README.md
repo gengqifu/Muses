@@ -64,6 +64,25 @@ await controller.play();
 // UI 侧订阅 controller.states / pcmBuffer / spectrumBuffer 渲染。
 ```
 
+## 数据导出与校验
+- 开启导出：在 `SoundwaveConfig.export` 配置目录/前缀和开关，默认关闭。例如：
+```dart
+await controller.init(SoundwaveConfig(
+  sampleRate: 44100,
+  bufferSize: 2048,
+  channels: 2,
+  export: const ExportConfig(
+    directoryPath: '<app-documents-or-external-files>',
+    filePrefix: 'session01',
+    enablePcm: true,
+    enableSpectrum: true,
+    enableDebugLog: true, // 可选，输出事件 JSONL 供校验
+  ),
+));
+```
+- 产物：`<prefix>_pcm.wav`（float32/stereo/44.1kHz）、`<prefix>_spectrum.csv`、`<prefix>_spectrum.jsonl`，若开启 debug 则有 `<prefix>_events.jsonl`。
+- PC 校验：使用 `tools/validate_export.py --wav ... --csv ... --jsonl ... --events <prefix>_events.jsonl`，对比导出文件与实时事件的一致性。
+
 ## 目录结构
 - `soundwave_player/`：Flutter 插件与示例。
 - `native/`：C/C++ 音频核心（环形缓冲/播放线程/FFT）。
