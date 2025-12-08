@@ -109,12 +109,14 @@ class ExportConfig {
     this.filePrefix = 'soundwave',
     this.enablePcm = true,
     this.enableSpectrum = true,
+    this.enableDebugLog = false,
   });
 
   final String directoryPath;
   final String filePrefix;
   final bool enablePcm;
   final bool enableSpectrum;
+  final bool enableDebugLog;
 
   void validate() {
     if (directoryPath.trim().isEmpty) {
@@ -128,6 +130,7 @@ class ExportConfig {
       'filePrefix': filePrefix,
       'enablePcm': enablePcm,
       'enableSpectrum': enableSpectrum,
+      'enableDebugLog': enableDebugLog,
     };
   }
 }

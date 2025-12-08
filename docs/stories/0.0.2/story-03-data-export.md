@@ -13,7 +13,7 @@
 - ✅ [4] 与节流/序号对齐，确保导出不影响实时链路性能。（导出队列有限长，超限丢弃最旧帧并保持写入有序）
 - ✅ [5] 文档与示例更新：说明导出格式、字段、开启方式。
   - 路径与权限：Android 使用 `getExternalFilesDir(Environment.DIRECTORY_MUSIC)`（免权限）；iOS 使用 `documentDirectory`；注意磁盘不足/文件大小上限。
-  - 配置开关：`SoundwaveConfig.export` 提供 `directoryPath/filePrefix/enablePcm/enableSpectrum`，默认关闭；与导出队列上限对齐（PCM/Spectrum 默认各 32 帧，超限丢弃最旧）。
+  - 配置开关：`SoundwaveConfig.export` 提供 `directoryPath/filePrefix/enablePcm/enableSpectrum/enableDebugLog`，默认关闭；与导出队列上限对齐（PCM/Spectrum 默认各 32 帧，超限丢弃最旧）。
   - 格式细节：WAV 44.1kHz/float32/stereo RIFF 头；CSV/JSONL 包含 `sequence,timestampMs,binHz,bin0...`；JSONL 按行输出字段同 CSV。
   - 示例启用：
     ```dart
@@ -26,12 +26,14 @@
         filePrefix: 'session01',
         enablePcm: true,
         enableSpectrum: true,
+        enableDebugLog: true, // 可选，产出事件 JSONL 供 PC 校验
       ),
     ));
     ```
   - 导出产物：`<prefix>_pcm.wav`、`<prefix>_spectrum.csv`、`<prefix>_spectrum.jsonl`。
+  - 校验工具：`tools/validate_export.py --wav ... --csv ... --jsonl ... --events <prefix>_events.jsonl`，事件日志需开启 `enableDebugLog`。
 
 ## 完成标准（DoD）
-- ✖️ [6] 导出文件经 PC 工具验证与实时数据一致。
+- ✅ [6] 导出文件经 PC 工具验证与实时数据一致。（提供 Python 校验脚本，基于导出文件 + debug 事件对比）
 - ✖️ [7] 测试通过（含导出流程）且构建门禁通过。
 - ✖️ [8] 文档与示例更新完成。***

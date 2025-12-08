@@ -68,6 +68,8 @@ class AudioController {
         spectrumJsonFileName: '${exp.filePrefix}_spectrum.jsonl',
         sampleRate: config.sampleRate,
         channels: config.channels,
+        debugEventsFileName:
+            exp.enableDebugLog ? '${exp.filePrefix}_events.jsonl' : null,
       ));
       await _exporter!.init();
       if (exp.enablePcm) {

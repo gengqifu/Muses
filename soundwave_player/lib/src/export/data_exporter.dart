@@ -17,6 +17,7 @@ class DataExportOptions {
     this.channels = 2,
     this.maxPendingPcmFrames = 32,
     this.maxPendingSpectrumFrames = 32,
+    this.debugEventsFileName,
   });
 
   /// 目标目录（需调用方确保可写，如 Android externalFilesDir / iOS documents）。
@@ -28,6 +29,7 @@ class DataExportOptions {
   final int channels;
   final int maxPendingPcmFrames;
   final int maxPendingSpectrumFrames;
+  final String? debugEventsFileName;
 }
 
 /// 管理 PCM 和谱数据导出（WAV/CSV/JSONL）。
@@ -37,6 +39,7 @@ class DataExporter {
   final DataExportOptions options;
   PcmWavWriter? _pcmWriter;
   SpectrumWriter? _spectrumWriter;
+  DebugEventLogger? _eventLogger;
   final ListQueue<_FrameJob<PcmFrame>> _pcmQueue = ListQueue<_FrameJob<PcmFrame>>();
   final ListQueue<_FrameJob<SpectrumFrame>> _spectrumQueue =
       ListQueue<_FrameJob<SpectrumFrame>>();
@@ -61,6 +64,11 @@ class DataExporter {
       csvFile: File('${options.directoryPath}/${options.spectrumCsvFileName}'),
       jsonlFile: File('${options.directoryPath}/${options.spectrumJsonFileName}'),
     );
+    if (options.debugEventsFileName != null) {
+      _eventLogger = DebugEventLogger(
+        file: File('${options.directoryPath}/${options.debugEventsFileName}'),
+      );
+    }
   }
 
   Future<void> addPcmFrame(PcmFrame frame) {
@@ -85,6 +93,7 @@ class DataExporter {
     await _waitForPending();
     await _pcmWriter?.close();
     await _spectrumWriter?.close();
+    await _eventLogger?.close();
   }
 
   int get droppedPcmFrames => _pcmDropped;
@@ -116,6 +125,9 @@ class DataExporter {
         final job = _pcmQueue.removeFirst();
         try {
           await writer.write(job.frame.samples);
+          if (_eventLogger != null) {
+            await _eventLogger!.writePcm(job.frame);
+          }
           job.completer.complete();
         } catch (e, st) {
           job.completer.completeError(e, st);
@@ -136,6 +148,9 @@ class DataExporter {
         final job = _spectrumQueue.removeFirst();
         try {
           await writer.write(job.frame);
+          if (_eventLogger != null) {
+            await _eventLogger!.writeSpectrum(job.frame);
+          }
           job.completer.complete();
         } catch (e, st) {
           job.completer.completeError(e, st);
@@ -285,4 +300,44 @@ class _FrameJob<T> {
 
   final T frame;
   final Completer<void> completer;
+}
+
+class DebugEventLogger {
+  DebugEventLogger({required this.file});
+
+  final File file;
+  IOSink? _sink;
+
+  Future<void> _ensureOpen() async {
+    _sink ??= file.openWrite(mode: FileMode.write);
+  }
+
+  Future<void> writePcm(PcmFrame frame) async {
+    await _ensureOpen();
+    final jsonObj = {
+      'type': 'pcm',
+      'sequence': frame.sequence,
+      'timestampMs': frame.timestampMs,
+      'samples': frame.samples,
+    };
+    _sink!.writeln(jsonEncode(jsonObj));
+  }
+
+  Future<void> writeSpectrum(SpectrumFrame frame) async {
+    await _ensureOpen();
+    final jsonObj = {
+      'type': 'spectrum',
+      'sequence': frame.sequence,
+      'timestampMs': frame.timestampMs,
+      'binHz': frame.binHz,
+      'bins': frame.bins,
+    };
+    _sink!.writeln(jsonEncode(jsonObj));
+  }
+
+  Future<void> close() async {
+    await _sink?.flush();
+    await _sink?.close();
+    _sink = null;
+  }
 }

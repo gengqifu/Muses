@@ -65,6 +65,28 @@ void main() {
       expect((obj['bins'] as List).length, bins.length);
     });
 
+    test('writes debug event log when enabled', () async {
+      final exporter = DataExporter(DataExportOptions(
+        directoryPath: tmp.path,
+        debugEventsFileName: 'events.jsonl',
+      ));
+      await exporter.init();
+      await exporter.addPcmFrame(
+          PcmFrame(sequence: 10, timestampMs: 123, samples: [0.1, -0.1]));
+      await exporter.addSpectrumFrame(SpectrumFrame(
+          sequence: 11, timestampMs: 200, bins: [0.5, 0.6], binHz: 50));
+      await exporter.close();
+
+      final lines = await File('${tmp.path}/events.jsonl').readAsLines();
+      expect(lines.length, 2);
+      final pcm = json.decode(lines[0]) as Map<String, dynamic>;
+      final spec = json.decode(lines[1]) as Map<String, dynamic>;
+      expect(pcm['type'], 'pcm');
+      expect((pcm['samples'] as List).first, closeTo(0.1, 1e-6));
+      expect(spec['type'], 'spectrum');
+      expect(spec['binHz'], 50);
+    });
+
     test('drops oldest pcm frames when queue is full', () async {
       final exporter = DataExporter(DataExportOptions(
         directoryPath: tmp.path,
