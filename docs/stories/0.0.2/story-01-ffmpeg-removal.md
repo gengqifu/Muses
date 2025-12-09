@@ -4,7 +4,7 @@
 - 移除 Android/iOS 所有 FFmpeg 代码、二进制与构建引用，切换仓库许可证为 Apache 2.0 并补充第三方 LICENSE/NOTICE 摘录，确保平台解码路径成为唯一入口。
 
 ## 测试优先（TDD）
-- ✖️ [1] 构建清理验证：无 FFmpeg 相关 CMake/Gradle/Pod 目标，构建脚本检查无残留。
+- ✔️ [1] 构建清理验证：无 FFmpeg 相关 CMake/Gradle/Pod 目标，构建脚本检查无残留。
 - ✖️ [2] 许可证检查：新增/更新 LICENSE、NOTICE/DEPENDENCIES，包含 KissFFT 等依赖；CI/脚本扫描无 GPL 片段。
 
 ## 开发任务
