@@ -61,6 +61,40 @@ sequenceDiagram
     UI->>Plug: pause/seek/stop (适配层场景)
 ```
 
+### Android 模块交互
+```mermaid
+flowchart LR
+    UI["Flutter UI"] --> Plugin["Flutter Plugin<br/>MethodChannel/EventChannel"]
+    Plugin --> Bridge["Android Plugin (Kotlin)<br/>API/回调映射"]
+    Bridge --> JNI["JNI Bridge"]
+    Player["ExoPlayer（可选适配层）"] --> Bridge
+    Player --> Core["C++ 核心<br/>PCM Ingress/节流/Downmix"]
+    JNI --> Core
+    Core --> Wave["波形抽样"]
+    Core --> FFT["KissFFT"]
+    Wave --> Event["事件派发<br/>波形/错误"]
+    FFT --> Event
+    Event --> Plugin
+    Plugin --> UI
+```
+
+### iOS 模块交互
+```mermaid
+flowchart LR
+    UI["Flutter UI"] --> Plugin["Flutter Plugin<br/>MethodChannel/EventChannel"]
+    Plugin --> Bridge["iOS Plugin (Swift)<br/>API/回调映射"]
+    Bridge --> ObjCxx["ObjC++ Bridge"]
+    Player["AVPlayer/AVAudioEngine（可选适配层）"] --> Bridge
+    Player --> Core["C++ 核心<br/>PCM Ingress/节流/Downmix"]
+    ObjCxx --> Core
+    Core --> Wave["波形抽样"]
+    Core --> FFT["KissFFT"]
+    Wave --> Event["事件派发<br/>波形/错误"]
+    FFT --> Event
+    Event --> Plugin
+    Plugin --> UI
+```
+
 ## 6. 构建与发布
 - Android：Gradle module 产出 AAR，支持 Maven 发布；CMake 构建 KissFFT 与核心；插件与 demo 可 path 依赖源码或依赖发布版。
 - iOS：XCFramework（静态/动态二合一），CMake/Xcode 构建；支持本地与二进制集成。
