@@ -43,4 +43,7 @@ if(SW_BUILD_TESTS AND NOT ANDROID AND NOT IOS)
     message(WARNING "GTest not found; tests will be skipped")
   endif()
 
+  add_executable(fft_compare tests/fft_compare_main.cpp)
+  target_link_libraries(fft_compare PRIVATE soundwave_core)
+
 endif()
