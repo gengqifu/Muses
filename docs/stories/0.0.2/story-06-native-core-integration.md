@@ -14,8 +14,9 @@
 - ◻️ [4] iOS XCFramework：以 vDSP 为默认 FFT，接入 PCM 节流/导出/回调；必要时桥接 `native/core` C++。构建 arm64 + 模拟器 XCFramework，Podspec/SPM 校验通过。
 - ◻️ [5] 跨端一致性：统一参数/归一化/窗口，准备对照矢量并记录误差；更新对齐报告。
 - ◻️ [6] 发布/脚本：更新 `tools/release/build_native_packages.sh` 支持新产物（含校验/路径），生成本地 maven + XCFramework。
+- ◻️ [7] 核心闭环实现：在 `native/core` 内补齐最小可用的 PCM 生成/节流→FFT→回调/导出闭环（可先用合成信号替代解码），并通过 JNI/ObjC 暴露；作为任务 [3]/[4]/[2] 的前置。
 
 ## 完成标准（DoD）
-- ◻️ [7] 原生 AAR/XCFramework 含真实功能（FFT/PCM/导出/可视化回调），本地或私有仓库可发布并通过校验。
-- ◻️ [8] 跨端 FFT 对齐报告更新，引用 `docs/fft_reference_*.json` 基线，误差在容差内（L2/Max < 1e-3），含运行命令/环境记录。
-- ◻️ [9] 提供集成指南：插件/Demo 如何切换到新产物（Debug 本地、Release 仓库）。*** 
+- ◻️ [8] 原生 AAR/XCFramework 含真实功能（FFT/PCM/导出/可视化回调），本地或私有仓库可发布并通过校验（依赖 [7] 完成）。
+- ◻️ [9] 跨端 FFT 对齐报告更新，引用 `docs/fft_reference_*.json` 基线，误差在容差内（L2/Max < 1e-3），含运行命令/环境记录。
+- ◻️ [10] 提供集成指南：插件/Demo 如何切换到新产物（Debug 本地、Release 仓库）。*** 
