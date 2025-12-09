@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 
 import 'soundwave_config.dart';
 import 'soundwave_exception.dart';
+import 'pcm_input_frame.dart';
 
 /// Platform-agnostic API for the SoundWave plugin.
 class SoundwavePlayer {
@@ -118,6 +119,37 @@ class SoundwavePlayer {
       throw SoundwaveException(e.code, e.message ?? 'Unknown error', e.details);
     }
   }
+
+  Future<void> pushPcmFrame(PcmInputFrame frame) async {
+    _ensureInitialized();
+    if (frame.sampleRate <= 0) {
+      throw ArgumentError.value(frame.sampleRate, 'sampleRate', 'must be > 0');
+    }
+    if (frame.channels <= 0) {
+      throw ArgumentError.value(frame.channels, 'channels', 'must be > 0');
+    }
+    if (frame.samples.isEmpty) {
+      throw ArgumentError.value(frame.samples, 'samples', 'cannot be empty');
+    }
+    if (frame.samples.length % frame.channels != 0) {
+      throw ArgumentError.value(
+          frame.samples.length, 'samples', 'must be divisible by channels');
+    }
+    if (frame.timestampMs < 0) {
+      throw ArgumentError.value(frame.timestampMs, 'timestampMs', 'must be >= 0');
+    }
+    if (frame.sequence < 0) {
+      throw ArgumentError.value(frame.sequence, 'sequence', 'must be >= 0');
+    }
+    // ignore: avoid_print
+    print('SoundwavePlayer:pushPcmFrame seq=${frame.sequence} ts=${frame.timestampMs}');
+    await _invoke<void>('pushPcmFrame', frame.toMap());
+  }
+
+  Future<void> subscribeWaveform() => _invoke<void>('subscribeWaveform');
+  Future<void> subscribeSpectrum() => _invoke<void>('subscribeSpectrum');
+  Future<void> unsubscribeWaveform() => _invoke<void>('unsubscribeWaveform');
+  Future<void> unsubscribeSpectrum() => _invoke<void>('unsubscribeSpectrum');
 
   void _ensureInitialized() {
     if (!_initialized) {

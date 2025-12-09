@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:soundwave_player/soundwave_player.dart';
+import 'package:soundwave_player/src/pcm_input_frame.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -137,6 +138,44 @@ void main() {
           'range': <String, Object?>{'start': 100, 'end': 200},
         },
       );
+    });
+
+    test('pushPcmFrame validates and forwards to platform', () async {
+      final player = SoundwavePlayer();
+      await player.init(
+          const SoundwaveConfig(sampleRate: 48000, bufferSize: 2048, channels: 2));
+      final frame = PcmInputFrame(
+          samples: <double>[0.1, -0.1, 0.2, -0.2],
+          sampleRate: 48000,
+          channels: 2,
+          timestampMs: 123,
+          sequence: 1);
+      await player.pushPcmFrame(frame);
+      final call = calls.last;
+      expect(call.method, 'pushPcmFrame');
+      expect(
+          call.arguments,
+          containsPair(
+              'samples', <double>[0.1, -0.1, 0.2, -0.2]));
+      expect(call.arguments, containsPair('sampleRate', 48000));
+      expect(call.arguments, containsPair('channels', 2));
+      expect(call.arguments, containsPair('timestampMs', 123));
+      expect(call.arguments, containsPair('sequence', 1));
+      expect(call.arguments, containsPair('frameSize', 2));
+    });
+
+    test('subscribe/unsubscribe calls platform', () async {
+      final player = SoundwavePlayer();
+      await player.init(
+          const SoundwaveConfig(sampleRate: 48000, bufferSize: 2048, channels: 2));
+      await player.subscribeWaveform();
+      await player.subscribeSpectrum();
+      await player.unsubscribeWaveform();
+      await player.unsubscribeSpectrum();
+      expect(
+          calls.map((c) => c.method),
+          containsAll(
+              ['subscribeWaveform', 'subscribeSpectrum', 'unsubscribeWaveform', 'unsubscribeSpectrum']));
     });
   });
 

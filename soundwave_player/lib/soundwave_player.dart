@@ -7,6 +7,7 @@ export 'src/audio_controller.dart';
 export 'src/soundwave_player.dart';
 export 'src/audio_status_view.dart';
 export 'src/pcm_frame.dart';
+export 'src/pcm_input_frame.dart';
 export 'src/pcm_queue.dart';
 export 'src/pcm_buffer.dart';
 export 'src/spectrum_frame.dart';
