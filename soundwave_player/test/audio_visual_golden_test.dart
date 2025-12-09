@@ -102,7 +102,7 @@ List<double> _computeSpectrum(List<double> samples, int sampleRate, {int n = 102
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  Future<void> _renderWaveformGolden(WidgetTester tester,
+  Future<void> renderWaveformGolden(WidgetTester tester,
       {required String asset, required String golden}) async {
     final wav = await _loadPcm16Wav(asset);
     final frame = PcmFrame(sequence: 0, timestampMs: 0, samples: wav.samples);
@@ -128,7 +128,7 @@ void main() {
     );
   }
 
-  Future<void> _renderSpectrumGolden(WidgetTester tester,
+  Future<void> renderSpectrumGolden(WidgetTester tester,
       {required String asset, required String golden}) async {
     final wav = await _loadPcm16Wav(asset);
     final bins = _computeSpectrum(wav.samples, wav.sampleRate);
@@ -163,55 +163,55 @@ void main() {
   }
 
   testWidgets('Waveform/Spectrum golden: sine 1kHz', (tester) async {
-    await _renderWaveformGolden(tester,
+    await renderWaveformGolden(tester,
         asset: 'test/assets/audio/sine_1k.wav',
         golden: 'goldens/waveform_sine_1k.png');
-    await _renderSpectrumGolden(tester,
+    await renderSpectrumGolden(tester,
         asset: 'test/assets/audio/sine_1k.wav',
         golden: 'goldens/spectrum_sine_1k.png');
   });
 
   testWidgets('Waveform/Spectrum golden: square 1kHz', (tester) async {
-    await _renderWaveformGolden(tester,
+    await renderWaveformGolden(tester,
         asset: 'test/assets/audio/square_1k.wav',
         golden: 'goldens/waveform_square_1k.png');
-    await _renderSpectrumGolden(tester,
+    await renderSpectrumGolden(tester,
         asset: 'test/assets/audio/square_1k.wav',
         golden: 'goldens/spectrum_square_1k.png');
   });
 
   testWidgets('Waveform/Spectrum golden: saw 1kHz', (tester) async {
-    await _renderWaveformGolden(tester,
+    await renderWaveformGolden(tester,
         asset: 'test/assets/audio/saw_1k.wav',
         golden: 'goldens/waveform_saw_1k.png');
-    await _renderSpectrumGolden(tester,
+    await renderSpectrumGolden(tester,
         asset: 'test/assets/audio/saw_1k.wav',
         golden: 'goldens/spectrum_saw_1k.png');
   });
 
   testWidgets('Waveform/Spectrum golden: white noise', (tester) async {
-    await _renderWaveformGolden(tester,
+    await renderWaveformGolden(tester,
         asset: 'test/assets/audio/noise_white.wav',
         golden: 'goldens/waveform_noise_white.png');
-    await _renderSpectrumGolden(tester,
+    await renderSpectrumGolden(tester,
         asset: 'test/assets/audio/noise_white.wav',
         golden: 'goldens/spectrum_noise_white.png');
   });
 
   testWidgets('Waveform/Spectrum golden: pink noise', (tester) async {
-    await _renderWaveformGolden(tester,
+    await renderWaveformGolden(tester,
         asset: 'test/assets/audio/noise_pink.wav',
         golden: 'goldens/waveform_noise_pink.png');
-    await _renderSpectrumGolden(tester,
+    await renderSpectrumGolden(tester,
         asset: 'test/assets/audio/noise_pink.wav',
         golden: 'goldens/spectrum_noise_pink.png');
   });
 
   testWidgets('Waveform/Spectrum golden: sweep 20-20k', (tester) async {
-    await _renderWaveformGolden(tester,
+    await renderWaveformGolden(tester,
         asset: 'test/assets/audio/sweep_20_20k.wav',
         golden: 'goldens/waveform_sweep.png');
-    await _renderSpectrumGolden(tester,
+    await renderSpectrumGolden(tester,
         asset: 'test/assets/audio/sweep_20_20k.wav',
         golden: 'goldens/spectrum_sweep.png');
   });

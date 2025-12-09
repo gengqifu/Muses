@@ -1,7 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:soundwave_player/soundwave_player.dart';
-import 'package:soundwave_player/src/pcm_input_frame.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -144,7 +143,7 @@ void main() {
       final player = SoundwavePlayer();
       await player.init(
           const SoundwaveConfig(sampleRate: 48000, bufferSize: 2048, channels: 2));
-      final frame = PcmInputFrame(
+      const frame = PcmInputFrame(
           samples: <double>[0.1, -0.1, 0.2, -0.2],
           sampleRate: 48000,
           channels: 2,

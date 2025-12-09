@@ -112,6 +112,7 @@ class _MyAppState extends State<MyApp> {
       final file = File('${dir.path}/sample.mp3');
       await file.writeAsBytes(data.buffer.asUint8List());
       final path = 'file://${file.path}';
+      if (!mounted) return;
       setState(() {
         _sourceController.text = path;
       });
@@ -128,6 +129,7 @@ class _MyAppState extends State<MyApp> {
       final file = File('${dir.path}/$name');
       await file.writeAsBytes(data.buffer.asUint8List());
       final path = 'file://${file.path}';
+      if (!mounted) return;
       setState(() {
         _sourceController.text = path;
       });

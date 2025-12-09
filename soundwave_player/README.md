@@ -34,6 +34,22 @@ void listen() {
     // 处理频谱数据
   });
 }
+
+/// 上层自行解码 PCM 时，可推送到 SDK 并订阅波形/频谱：
+Future<void> pushPcm() async {
+  await player.init(const SoundwaveConfig(sampleRate: 48000, bufferSize: 2048, channels: 2));
+  // 解码得到交错 PCM（示例仅用占位数据）
+  const frame = PcmInputFrame(
+    samples: <double>[0.1, -0.1, 0.2, -0.2],
+    sampleRate: 48000,
+    channels: 2,
+    timestampMs: 0,
+    sequence: 1,
+  );
+  await player.pushPcmFrame(frame);
+  await player.subscribeWaveform();
+  await player.subscribeSpectrum();
+}
 ```
 
 ### 约束与注意
