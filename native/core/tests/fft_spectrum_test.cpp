@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include <cmath>
+#include <limits>
 #include <vector>
 
 namespace sw {
@@ -156,6 +157,31 @@ TEST(FftSpectrumTest, WhiteNoiseHasBroadEnergy) {
   }
   var /= spectrum.size();
   EXPECT_GT(var, 0.0);
+}
+
+TEST(FftSpectrumTest, PerformanceSmokeNoNanOrInf) {
+  const int sample_rate = 44100;
+  const int window = 512;
+  SpectrumConfig cfg;
+  cfg.window_size = window;
+  cfg.window = WindowType::kHann;
+  cfg.power_spectrum = true;
+
+  std::vector<float> samples(window);
+  float val = 0.42f;
+  int iterations = 200;  // 足够覆盖性能烟测，避免耗时过长。
+  for (int iter = 0; iter < iterations; ++iter) {
+    for (int n = 0; n < window; ++n) {
+      val = std::fmod(val * 1.987f + 0.033f, 1.0f);
+      samples[n] = val * 2.0f - 1.0f;
+    }
+    auto spectrum = ComputeSpectrum(samples, sample_rate, cfg);
+    ASSERT_EQ(static_cast<int>(spectrum.size()), window / 2 + 1);
+    for (float v : spectrum) {
+      EXPECT_FALSE(std::isnan(v));
+      EXPECT_FALSE(std::isinf(v));
+    }
+  }
 }
 
 }  // namespace sw
