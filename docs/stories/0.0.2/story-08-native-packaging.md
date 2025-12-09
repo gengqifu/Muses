@@ -23,5 +23,5 @@
 
 ## 完成标准（DoD）
 - ✅ [7] 原生包可单独发布/被集成（本地或私有仓库验证）。依赖 [3a]/[4a]。Android 已通过 `soundwave_player/android/gradlew -p native/android-visualization ... publishReleasePublicationToLocalRepository` 发布到本地 `build/native-release/android/m2-local`；iOS 占位 XCFramework 已生成，可用于本地 Pod/SPM 集成。
-- ✖️ [8] Flutter Demo 使用原生包跑通，构建/测试/合规检查通过。依赖 [7]。
-- ✖️ [9] Story02/03/04 的核心能力（FFT/vDSP、PCM/导出、可视化回调链路）已封装进原生 AAR/XCFramework（无 Flutter 依赖），并有验证记录。***
+- ✖️ [8] Story02/03/04 的核心能力（FFT/vDSP、PCM/导出、可视化回调链路）已封装进原生 AAR/XCFramework（无 Flutter 依赖），并有验证记录。（完成后方可执行 [9]）
+- ✖️ [9] Flutter Demo 使用原生包跑通，构建/测试/合规检查通过。依赖 [7] + [8]。***
