@@ -16,6 +16,13 @@ SoundWave 提供音频可视化（波形/频谱）与数据导出能力的 Flutt
   s.source_files = 'Classes/**/*'
   s.dependency 'Flutter'
   s.platform = :ios, '12.0'
+  # 调试：若指定本地原生 XCFramework 路径，则优先使用；否则依赖已发布的原生包。
+  local_vis_path = ENV['SW_VIS_LOCAL_PATH'] || '../../native/ios-visualization'
+  if File.exist?(local_vis_path)
+    s.dependency 'SoundwaveVisualization', :path => local_vis_path
+  else
+    s.dependency 'SoundwaveVisualization', '0.0.2-native-SNAPSHOT'
+  end
 
   # Flutter.framework does not contain a i386 slice.
   s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES', 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386' }
