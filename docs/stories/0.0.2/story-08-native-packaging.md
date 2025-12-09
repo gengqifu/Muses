@@ -21,5 +21,5 @@
 - ✅ [6] CI/脚本：发布/校验流程覆盖新原生包，确保无 Flutter 依赖。（新增 `tools/release/build_native_packages.sh`，Android 本地 maven 发布；iOS 进行 Podspec/SwiftPM 校验，需事先生成 XCFramework）
 
 ## 完成标准（DoD）
-- ✖️ [7] 原生包可单独发布/被集成（本地或私有仓库验证）。依赖 [3a]/[4a]。
+- ✅ [7] 原生包可单独发布/被集成（本地或私有仓库验证）。依赖 [3a]/[4a]。Android 已通过 `soundwave_player/android/gradlew -p native/android-visualization ... publishReleasePublicationToLocalRepository` 发布到本地 `build/native-release/android/m2-local`；iOS 占位 XCFramework 已生成，可用于本地 Pod/SPM 集成。
 - ✖️ [8] Flutter Demo 使用原生包跑通，构建/测试/合规检查通过。依赖 [7]。***

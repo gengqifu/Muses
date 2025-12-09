@@ -1,5 +1,5 @@
 plugins {
-    id "com.android.library"
+    id "com.android.library" version "8.1.0"
     id "org.jetbrains.kotlin.android" version "1.8.22"
     id "maven-publish"
 }
@@ -39,6 +39,13 @@ android {
         cmake {
             path "src/main/cpp/CMakeLists.txt"
         }
+    }
+}
+
+// 使用 AndroidX
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+    kotlinOptions {
+        freeCompilerArgs += ["-Xjvm-default=all"]
     }
 }
 
