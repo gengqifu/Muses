@@ -5,4 +5,10 @@ package com.soundwave.visualization.core
  */
 object VisualizationCore {
     const val VERSION = "0.0.2-native-SNAPSHOT"
+
+    /**
+     * 当前仅返回 native 占位版本号，验证 JNI/NDK 依赖链。
+     */
+    @JvmStatic
+    fun nativeVersion(): String = NativeBridge.nativeVersion()
 }

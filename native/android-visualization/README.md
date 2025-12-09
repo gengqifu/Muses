@@ -6,6 +6,7 @@
 - 目录：`native/android-visualization/`
 - Gradle library module（无 Flutter 依赖），占位 Kotlin API `VisualizationCore`。
 - Maven Publish 已配置（groupId `com.soundwave`, artifactId `visualization-core`, version `0.0.2-native-SNAPSHOT` 可调整），默认发布到本地 `build/m2-local`（可通过 `-PsoundwaveRepoDir` 覆写）。
+- 增加 NDK/CMake 占位 JNI（`NativeBridge.nativeVersion()`），编译生成 `libvisualizationcore.so`，用于验证无 Flutter 依赖的发布链路。
 
 后续工作：
 - 将 `native/core` C++ 静态库接入（CMake），暴露 JNI 接口（init/load/play/pause/seek、PCM/谱回调、导出开关）。
