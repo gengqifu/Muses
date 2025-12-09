@@ -10,7 +10,7 @@
 
 ## 开发任务
 - ✔️ [4] 设计 PCM 帧数据结构（samples/sr/ch/ts/seq/frameSize），实现 ingress 校验与缓冲。
-- ✖️ [5] 实现波形/频谱订阅事件骨架（暂用占位 FFT 输出），含错误回调。
+- ✔️ [5] 实现波形/频谱订阅事件骨架（暂用占位 FFT 输出），含错误回调。
 - ✖️ [6] 插件层映射 push/subscribe/unsubscribe API，补充文档与示例调用。
 
 ## 完成标准（DoD）
