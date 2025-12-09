@@ -1,70 +1,70 @@
-# SoundWave 0.0.2 技术方案
+# SoundWave 0.0.2 技术方案（PCM 输入 + KissFFT + 原生库发布）
 
 ## 1. 背景与目标
-- 去除 FFmpeg 依赖，改用平台解码器以降低许可证风险与包体体积。
-- FFT 库选型：Android 只使用 KissFFT（JNI）；iOS 默认使用 Accelerate/vDSP，同时提供可选 KissFFT（用于一致性/测试，demo 可切换）。
-- 将 PCM 波形与 FFT 频谱的采集/计算/导出能力从示例抽离为可复用库，支持 Maven（Android）与 pub（Flutter）发布，既可源码依赖也可二进制依赖。
-- 在移除 FFmpeg 后统一使用 Apache-2.0 许可证，更新文档与合规声明。
-- 新增测试工具场景：受测 App 已有解码能力，本插件作为旁路输出 PCM/频域数据，可保存为通用格式（如 WAV/CSV/JSON）供 PC 第三方音频分析；移动端可视化作为可选扩展/后门开关，播放过程中即时观察波形/谱。
+- 完全移除 FFmpeg，播放解码由上层应用集成平台能力（Android ExoPlayer/MediaCodec，iOS AVPlayer/AVFoundation），SDK 接收解码后的 PCM。
+- 统一 FFT 实现为 KissFFT（Android/iOS 同一套参数和归一化），替换现有 Kotlin FFT 与 iOS vDSP。
+- 封装 PCM 处理（波形/频谱）能力为可发布的原生库：Android 产出 AAR（支持 Maven），iOS 产出 XCFramework；Flutter demo 通过插件桥接调用。
+- 项目许可证切换为 Apache License 2.0，同时保留第三方依赖 LICENSE 摘录（含 KissFFT）。
+- Demo 打包 `soundwave_player/example/assets/audio` 下的音频，便于开箱测试。
 
-## 2. 方案概览
-- 解码链路：ExoPlayer（MediaCodec）/AVFoundation 直出 PCM，保持现有环形缓冲与节流策略；FFmpeg/CMake 相关全部移除。
-- FFT：Android JNI 调用 C/C++ KissFFT（唯一实现，窗口化 + 功率谱）；iOS 默认 vDSP，提供可切换的 KissFFT 选项（用于一致性/低依赖场景）；两端保持统一窗口参数与输出格式。
-- 组件化：抽象“可视化管线”库，含 PCM tap、FFT、节流、事件模型与导出 API；Flutter 层提供 Dart 包包装；Android 侧提供独立 AAR。
-- License：切换为 Apache-2.0，删改 GPL 相关文本；确保依赖链（ExoPlayer、vDSP、KissFFT）与 License 兼容，并提供 NOTICE/DEPENDENCIES。
-- 测试工具输出：旁路 PCM/谱数据支持本地存储（WAV/CSV/JSON），可离线导出到 PC；移动端可视化为可选模块，由受测 App 通过隐藏开关调出。
+## 2. 范围与交付
+- 核心交付
+  - 数据接口：SDK 接收上层推送的 PCM（float32，多声道交错，携带采样率/通道数/时间戳），输出波形抽样与 FFT 频谱。
+  - FFT：KissFFT 为唯一实现；参数统一（默认 nfft=1024，hop=512，Hann 窗，输出幅度谱归一化到 [0,1]，保留原始幅度）。
+  - 数据面：PCM 输入后 downmix，再做节流输出波形帧与频谱帧。
+  - API：核心聚焦初始化、参数配置、PCM 推送、波形/频谱订阅与错误回调；可选提供平台播放器适配层（对齐 ExoPlayer API）供 demo 快速集成。
+  - 产物：Android AAR（Maven 可发布）、iOS XCFramework；调试可直接依赖源码 module。
+  - Flutter 插件：优先复用现有 MethodChannel，补充映射新 API/错误回调；Flutter demo 绘制波形/频谱，可选调用库内原生绘制示例。
+  - 许可：仓库主 LICENSE 改为 Apache 2.0，新增 NOTICE/DEPENDENCIES，列出 KissFFT 等第三方许可摘录。
+- 非目标（本版本不做）
+  - 非平台解码器扩展（例如自建软解）。
+  - 高阶编辑/导出能力，仅预留接口不实现。
 
-## 3. 关键改动与接口
-### 3.1 解码与数据流
-- 输出规范：平台解码统一输出 44.1 kHz、float32、立体声；若源与目标不一致则重采样/格式转换（16-bit → float32），Playback 仍走双声道，FFT 输入先 downmix `(L+R)/2`。
-- Android：保留 ExoPlayer/AudioSink，自定义 AudioProcessor 旁路 PCM；删除 FFmpeg so/headers/CMake 条目；剔除 native 解码路径与相关测试。
-- iOS：AVPlayer + tap 输出 PCM；删除 FFmpeg 适配代码和二进制；保持 EventChannel 推送。
-- 数据流：解码 → PCM 缓冲 → 节流 → PCM 事件 + FFT 事件；FFT 的输入从 PCM tap 复用。
+## 3. 架构与实现要点
+- 数据链路
+  - 上层应用解码输出 PCM；SDK 提供 PCM ingress（带采样率/通道/时间戳校验）、ring buffer 与节流。
+  - 可选播放适配层：Android 基于 ExoPlayer，iOS 基于 AVPlayer/AVAudioEngine，仅用于 demo/集成示例。
+- FFT 与数据管线
+  - C/C++ KissFFT 封装为共享模块，JNI/ObjC++ 统一接口；窗口化（Hann/Hamming 预留），归一化一致。
+  - 数据流：上层解码 → PCM 推送 → ingress 校验 → 缓冲/抽样/节流 → downmix → 波形帧 + FFT 帧。
+- 组件化
+  - Android：`visualization-core`（名待定）Gradle module → 产出 AAR；发布到 Maven 仓库；插件依赖此 module。
+  - iOS：对应核心作为静态库/动态库组合为 XCFramework；支持本地与二进制分发；插件通过桥接调用。
+  - Flutter：插件层 API 映射库接口，Dart 层 CustomPainter 绘制；demo 依赖插件（发布版直接依赖二进制，调试版依赖源码）。
+- 资源
+  - 在 `pubspec.yaml` 中声明 `soundwave_player/example/assets/audio` 下的文件为 assets，保证打包进 demo App。
 
-### 3.2 FFT 选型
-- Android：JNI 桥接 `kissfft`（CMake 编译为静态/共享），提供 `computeSpectrum(float[] samples, int nfft, WindowType, overlap)`；Kotlin 自写 FFT 删除，不保留 fallback。
-- iOS：默认 vDSP FFT，接口与 Android 对齐；额外提供可选 KissFFT（同一接口），在 demo 中可切换以做跨端一致性对比或规避 Accelerate 依赖。
-- FFT 规范：窗口 Hann（默认）/Hamming，功率谱归一化 `2 / (N * E_window)`（E_window 为窗口能量），幅度结果保持与输入幅值一致；nfft 默认 1024、overlap 默认 50%；多声道统一在 FFT 前 downmix；vDSP/KissFFT 按相同归一化因子输出，跨端容差 < 1e-3。
-- 输出格式：`bins: FloatArray`, `binHz = sampleRate / nfft`, `window = Hann/Hamming`, `seq/timestamp` 保持现状。
+## 4. API 与数据格式
+- 核心接口：`init(config)`, `pushPcmFrame(frame)`, `subscribeWaveform(...)`, `subscribeSpectrum(...)`, `unsubscribe(...)`, `setFftParams(...)`, `setThrottle(...)`。
+- PCM 输入：float32，交错多声道，携带采样率/通道数/时间戳/序号，推荐帧长 1024/2048，推送频率与 hop 对齐；downmix 规则 `(L+R)/2`。
+- FFT 输出：`bins[]` 幅度谱（归一化），附原始幅度；`binHz = sampleRate / nfft`；附时间戳/序号/窗口类型。
+- 错误回调：输入格式异常（采样率/通道突变、帧长异常）、缓冲过载、FFT 计算错误；如使用可选播放器适配层，播放器错误需透传。
+- 可选播放适配层：`load/play/pause/stop/seek` 与 ExoPlayer 语义对齐，供 demo/快速集成使用。
 
-### 3.3 组件化与发布
-- Android：拆出 `visualization-core`（PCM tap + FFT + 节流 + 元数据模型），发布到 Maven（groupId `com.soundwave`, artifactId `visualization-core`）；插件依赖该 AAR，版本遵循 semver，与 Dart 包保持主版本一致（如 0.0.x → 0.0.x）。
-- iOS：抽出可视化能力为独立 CocoaPods（pod 名：`SoundwaveVisualization`）与 Swift Package（包名同 pod），封装 PCM tap + vDSP FFT（默认）+ KissFFT（可选）+ 节流/事件模型；支持 XCFramework/源码两种形态；版本与 Android/Dart 对齐（同主次版本）。
-- Flutter/Dart：新建 `soundwave_visualization` 包，暴露 `PcmFrame` / `SpectrumFrame` / 绘制组件；支持 path/pub 依赖；示例锁定同版本；遵循 semver，与原生产物的主次版本同步。
-- 示例/demo 仅作为集成验证，不再承载核心逻辑。
-- 测试工具扩展：提供可插拔“数据导出”模块（WAV/CSV/JSON）与“可视化后门”模块；受测 App 可按需依赖，仅导出不必引入 UI。
+## 5. 工作拆解（建议顺序）
+1) 移除 FFmpeg：清理 CMake/Gradle/Pod 依赖、源码与二进制；更新文档与构建脚本。
+2) 数据接口落地：定义并实现 PCM ingress（格式校验、时间戳/序号、节流）；上层能推送 PCM 并拿到波形/频谱。
+3) FFT 统一：接入 KissFFT（Android/iOS），删除 Kotlin FFT 与 vDSP 路径；参数/归一化一致；新增跨端对齐测试。
+4) 组件化与发布：拆出核心 module，完成 AAR/XCFramework 构建脚本；准备 Maven/XCFramework 发布配置；插件依赖重定向到新 module。
+5) Flutter demo 调整：demo 使用平台播放器解码并推送 PCM；插件 API 映射新接口；声明 assets；验证波形/频谱绘制。
+6) 可选播放适配层：提供 ExoPlayer/AVPlayer 封装供 demo/快速接入（可选项，保持与核心解耦）。
+7) 许可更新：主 LICENSE 改为 Apache 2.0，新增 NOTICE/DEPENDENCIES；检查第三方许可引用。
+8) 回归与验收：跑通 `flutter analyze/test`，PCM/FFT 管线集成测试，长稳播放 smoke（demo 路径）。
 
-### 3.4 License
-- 目标 License：Apache-2.0（与 ExoPlayer/KissFFT/vDSP 兼容），作为仓库唯一 License。
-- 更新项：`LICENSE` 文件替换，`README`/`pubspec`/`build.gradle`/`podspec` 声明，移除 GPL 相关引用；生成 NOTICE/DEPENDENCIES（列出 ExoPlayer Apache、KissFFT BSD、vDSP 专有）并纳入 CI 校验。
+## 6. 测试与验收标准
+- 单测：KissFFT 频点正确性（单频/双频/白噪）、窗口与 nfft/hop 参数覆盖；PCM 序号/节流。
+- 集成：上层推送 PCM（本地/HTTP 播放由上层完成），验证波形/谱同步；错误回调覆盖格式异常/缓冲过载；前后台切换恢复。
+- 性能：波形/谱刷新流畅，目标 60fps；长稳播放 1–2 小时无 XRuns/明显内存增长。
+- 产物验证：AAR/XCFramework 构建与本地集成验证；Flutter demo 使用发布版/源码版均可跑通。
 
-## 4. 工作拆解（建议顺序）
-1) 移除 FFmpeg 依赖：清理 `ffmpeg/` 预编库、CMake/Gradle/Podspec 引用、解码代码路径；更新 README/CHANGELOG。
-2) 平台解码回归：验证本地/HTTP 源播放与 PCM 推送；补充弱网/seek 基本测试。
-3) FFT 替换：Android 接入 JNI + KissFFT，删除 Kotlin FFT 主路径；iOS 默认 vDSP + 可选 KissFFT，参数与归一化对齐；新增跨端交叉校验测试。
-4) 组件化拆分：抽取可视化管线为独立模块（Android AAR：`com.soundwave:visualization-core`；iOS Pod/SPM：`SoundwaveVisualization`；Dart 包：`soundwave_visualization`），并新增“数据导出”可选模块（WAV/CSV/JSON 输出）；调整插件引用路径，补发布配置（groupId/version/pom/Podspec/SPM）。
-5) License 切换：替换 LICENSE 文件与声明，生成 NOTICE/DEPENDENCIES，检查依赖许可，更新 README/CHANGELOG。
-6) 回归与基线：跑通 `flutter analyze`、`flutter test`、新增 FFT 对齐测试（Android JNI vs iOS vDSP vs iOS KissFFT 参考），长时间播放 smoke；新增数据导出正确性（PC 复核）与可视化后门开关验证。
+## 7. 风险与缓解
+- 输入契约不一致：明确 PCM 规格/帧长/采样率、通道变化处理；提供错误码或动态适配。
+- 性能回归：在处理线程避免重计算，FFT 单独线程/节流；使用复用缓冲减少分配。
+- 发布流程：提前验证 Maven/XCFramework 构建与签名；提供脚本化流程。
+- 许可遗漏：脚本检查 GPL 片段，人工复核 README/构建脚本与第三方 LICENSE 摘录。
 
-## 5. 测试与验收
-- 单元测试：FFT 频点正确性（单频/双频/白噪），窗口与 nfft/overlap 参数覆盖；PCM 节流与序号递增。
-- 集成测试：本地/HTTP 播放、seek 后 PCM/FFT 序列重置；前后台切换恢复；跨端谱对齐（vDSP vs KissFFT）。
-- 性能基线：FFT 抽稀后 CPU 峰值（Android/iOS）不回归；帧率目标 60fps（或自适应降级）；长稳播放（≥1h）无序列漂移。
-- 许可证检查：依赖 License 列表与新 License 匹配；仓库不再包含 GPL 组件。
-
-## 6. 风险与缓解
-- 弱网/流式在平台解码路径下的稳定性：增加重试与缓冲事件观测。
-- JNI 接口稳定性：保持简单签名与版本号，附兼容测试。
-- 组件拆分后的依赖地狱：明确版本约束与兼容矩阵，示例锁定同版本。
-- License 变更遗漏：用脚本检查 GPL 片段，人工复核 README/构建脚本。
-
-## 7. 迁移与兼容性
-- 格式支持变化：移除 FFmpeg 后仅支持平台解码格式（mp3/aac/wav/alac/flac*，以平台支持为准）；不再支持 FFmpeg 专有/长尾格式（如 ape/opus/ogg 需另行确认），文档需列出支持/不支持矩阵。
-- 配置变更：统一输出 44.1 kHz/float32，若调用方依赖源采样率需调整；FFT Downmix 为默认行为，需在发布说明中提示。
-- API 兼容：保持 MethodChannel/事件字段不变；新增 iOS FFT 后端切换参数需有默认值（vDSP），向后兼容。
-
-## 8. 里程碑与交付
-- M1：移除 FFmpeg + 平台解码回归通过。
-- M2：FFT 替换完成（Android KissFFT JNI / iOS vDSP），对齐测试通过。
-- M3：可视化管线拆分并发布 AAR + Dart 包，插件接入新包。
-- M4：License 切换完成，文档/CHANGELOG 更新，端到端测试通过。
+## 8. 里程碑
+- M1：FFmpeg 移除 + PCM 数据接口落地（上层推送 PCM，SDK 输出波形/频谱）。
+- M2：KissFFT 统一完成，跨端对齐测试通过。
+- M3：核心模块拆分，AAR/XCFramework 构建与插件联调完成；demo 播放解码并推送 PCM，波形/可视化通过。
+- M4：LICENSE/NOTICE 更新，发布产物验证完成，端到端回归通过。
