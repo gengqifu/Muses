@@ -61,12 +61,16 @@ android {
         }
     }
 
-    dependencies {
-        implementation("androidx.media3:media3-exoplayer:1.2.1")
-        implementation("androidx.media3:media3-exoplayer-hls:1.2.1")
-        implementation("androidx.media3:media3-session:1.2.1")
-        testImplementation("org.jetbrains.kotlin:kotlin-test")
-        testImplementation("org.mockito:mockito-core:5.0.0")
+dependencies {
+    // 调试：如果存在本地原生可视化模块，则优先使用；否则使用插件自带实现。
+    if (project.findProject(":android-visualization") != null) {
+        implementation project(":android-visualization")
+    }
+    implementation("androidx.media3:media3-exoplayer:1.2.1")
+    implementation("androidx.media3:media3-exoplayer-hls:1.2.1")
+    implementation("androidx.media3:media3-session:1.2.1")
+    testImplementation("org.jetbrains.kotlin:kotlin-test")
+    testImplementation("org.mockito:mockito-core:5.0.0")
     }
 
     testOptions {

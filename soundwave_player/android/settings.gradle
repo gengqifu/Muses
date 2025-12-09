@@ -1,1 +1,8 @@
 rootProject.name = 'soundwave_player'
+
+// 调试模式下可使用本地原生模块（无 Flutter 依赖）。
+def localNativeModule = file("../../native/android-visualization")
+if (localNativeModule.exists()) {
+    include ':android-visualization'
+    project(':android-visualization').projectDir = localNativeModule
+}
