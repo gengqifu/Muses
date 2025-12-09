@@ -27,4 +27,13 @@ object VisualizationCore {
 
     @JvmStatic
     fun stopStub() = NativeBridge.nativeStopStub()
+
+    @JvmStatic
+    fun pauseStub() = NativeBridge.nativePauseStub()
+
+    @JvmStatic
+    fun resumeStub() = NativeBridge.nativeResumeStub()
+
+    @JvmStatic
+    fun seekStub(positionMs: Long) = NativeBridge.nativeSeekStub(positionMs)
 }

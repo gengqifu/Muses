@@ -27,8 +27,11 @@ void vis_stub_set_pcm_callback(VisStubHandle* handle, void (*cb)(const PcmFrame&
 void vis_stub_set_spectrum_callback(VisStubHandle* handle, void (*cb)(const SpectrumFrame&, void*),
                                     void* ud);
 
-// 启动/停止合成信号（正弦）推流，供原生闭环验证。
+// 控制：启动/暂停/恢复/停止/seek（仅合成信号，seek 重置时间戳与相位）。
 void vis_stub_start(VisStubHandle* handle);
+void vis_stub_pause(VisStubHandle* handle);
+void vis_stub_resume(VisStubHandle* handle);
 void vis_stub_stop(VisStubHandle* handle);
+void vis_stub_seek(VisStubHandle* handle, int64_t position_ms);
 
 }  // namespace sw

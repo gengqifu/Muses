@@ -107,6 +107,30 @@ Java_com_soundwave_visualization_core_NativeBridge_nativeStartStub(JNIEnv* env, 
 }
 
 extern "C" JNIEXPORT void JNICALL
+Java_com_soundwave_visualization_core_NativeBridge_nativePauseStub(JNIEnv*, jclass) {
+  std::lock_guard<std::mutex> lock(g_mutex);
+  if (g_handle) {
+    sw::vis_stub_pause(g_handle.get());
+  }
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_soundwave_visualization_core_NativeBridge_nativeResumeStub(JNIEnv*, jclass) {
+  std::lock_guard<std::mutex> lock(g_mutex);
+  if (g_handle) {
+    sw::vis_stub_resume(g_handle.get());
+  }
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_soundwave_visualization_core_NativeBridge_nativeSeekStub(JNIEnv*, jclass, jlong positionMs) {
+  std::lock_guard<std::mutex> lock(g_mutex);
+  if (g_handle) {
+    sw::vis_stub_seek(g_handle.get(), static_cast<int64_t>(positionMs));
+  }
+}
+
+extern "C" JNIEXPORT void JNICALL
 Java_com_soundwave_visualization_core_NativeBridge_nativeStopStub(JNIEnv* env, jclass) {
   std::lock_guard<std::mutex> lock(g_mutex);
   ClearHandle(env);

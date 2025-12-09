@@ -13,6 +13,9 @@ struct VisStubHandle {
   std::unique_ptr<PcmThrottler> pcm_throttler;
   std::unique_ptr<PcmThrottler> spectrum_throttler;
   std::atomic<bool> running{false};
+  std::atomic<bool> paused{false};
+  std::atomic<int64_t> ts_ms{0};
+  std::atomic<float> phase{0.0f};
   std::thread worker;
 
   void (*pcm_cb)(const PcmFrame&, void*) = nullptr;
@@ -26,14 +29,17 @@ static void RunLoop(VisStubHandle* h) {
   const size_t ch = static_cast<size_t>(h->cfg.channels);
   const float sr = static_cast<float>(h->cfg.sample_rate);
   std::vector<float> interleaved(frames_per_buf * ch, 0.0f);
-  float phase = 0.0f;
   const float tone = 1000.0f;
   const float two_pi = 2.0f * static_cast<float>(M_PI);
-  int64_t ts_ms = 0;
   const int64_t frame_dur_ms =
       static_cast<int64_t>((frames_per_buf * 1000) / static_cast<size_t>(h->cfg.sample_rate));
 
   while (h->running.load()) {
+    if (h->paused.load()) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(5));
+      continue;
+    }
+    float phase = h->phase.load();
     // 填充合成正弦，双声道同相
     for (size_t i = 0; i < frames_per_buf; ++i) {
       float sample = std::sin(two_pi * tone * (static_cast<float>(i) / sr) + phase);
@@ -42,15 +48,16 @@ static void RunLoop(VisStubHandle* h) {
       }
     }
     phase += two_pi * tone * static_cast<float>(frames_per_buf) / sr;
+    h->phase.store(phase);
 
     // PCM 推送（节流）
     if (h->pcm_cb && h->pcm_throttler) {
       PcmThrottleInput in;
       in.sequence = 0;  // 不关心序号
-      in.timestamp_ms = ts_ms;
+      in.timestamp_ms = h->ts_ms.load();
       in.num_frames = static_cast<int>(frames_per_buf);
       in.num_channels = static_cast<int>(ch);
-      auto outs = h->pcm_throttler->Push(in, ts_ms);
+      auto outs = h->pcm_throttler->Push(in, in.timestamp_ms);
       for (const auto& o : outs) {
         if (o.dropped) continue;
         PcmFrame f;
@@ -67,10 +74,10 @@ static void RunLoop(VisStubHandle* h) {
     if (h->spectrum_cb && h->spectrum_throttler) {
       PcmThrottleInput in;
       in.sequence = 0;
-      in.timestamp_ms = ts_ms;
+      in.timestamp_ms = h->ts_ms.load();
       in.num_frames = static_cast<int>(frames_per_buf);
       in.num_channels = static_cast<int>(ch);
-      auto outs = h->spectrum_throttler->Push(in, ts_ms);
+      auto outs = h->spectrum_throttler->Push(in, in.timestamp_ms);
       for (const auto& o : outs) {
         if (o.dropped) continue;
         SpectrumConfig scfg = h->cfg.spectrum_cfg;
@@ -87,8 +94,8 @@ static void RunLoop(VisStubHandle* h) {
         sf.bins = spec.data();
         sf.num_bins = static_cast<int>(spec.size());
         sf.window_size = scfg.window_size;
-        sf.bin_hz = static_cast<float>(h->cfg.sample_rate) /
-                    static_cast<float>(scfg.window_size);
+        sf.bin_hz =
+            static_cast<float>(h->cfg.sample_rate) / static_cast<float>(scfg.window_size);
         sf.sample_rate = h->cfg.sample_rate;
         sf.window = scfg.window;
         sf.power_spectrum = scfg.power_spectrum;
@@ -97,7 +104,7 @@ static void RunLoop(VisStubHandle* h) {
       }
     }
 
-    ts_ms += frame_dur_ms;
+    h->ts_ms.fetch_add(frame_dur_ms);
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
   }
 }
@@ -136,6 +143,9 @@ void vis_stub_set_spectrum_callback(VisStubHandle* handle, void (*cb)(const Spec
 
 void vis_stub_start(VisStubHandle* handle) {
   if (!handle || handle->running.exchange(true)) return;
+  handle->paused.store(false);
+  handle->ts_ms.store(0);
+  handle->phase.store(0.0f);
   handle->worker = std::thread(RunLoop, handle);
 }
 
@@ -145,6 +155,25 @@ void vis_stub_stop(VisStubHandle* handle) {
   if (handle->worker.joinable()) {
     handle->worker.join();
   }
+  handle->paused.store(false);
+  handle->ts_ms.store(0);
+  handle->phase.store(0.0f);
+}
+
+void vis_stub_pause(VisStubHandle* handle) {
+  if (!handle) return;
+  handle->paused.store(true);
+}
+
+void vis_stub_resume(VisStubHandle* handle) {
+  if (!handle) return;
+  handle->paused.store(false);
+}
+
+void vis_stub_seek(VisStubHandle* handle, int64_t position_ms) {
+  if (!handle) return;
+  handle->ts_ms.store(position_ms);
+  handle->phase.store(0.0f);
 }
 
 }  // namespace sw

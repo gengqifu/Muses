@@ -20,4 +20,8 @@ object NativeBridge {
     )
 
     external fun nativeStopStub()
+
+    external fun nativePauseStub()
+    external fun nativeResumeStub()
+    external fun nativeSeekStub(positionMs: Long)
 }

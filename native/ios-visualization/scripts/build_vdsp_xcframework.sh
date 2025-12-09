@@ -15,23 +15,35 @@ ARCHIVE_SIM="$OUT_DIR/sim"
 rm -rf "$OUT_DIR"
 mkdir -p "$OUT_DIR" "$ARCHIVE_IOS" "$ARCHIVE_SIM" "$HEADERS_DIR"
 # 只拷贝头文件，避免源码混入产物
-cp "$SRC_DIR/SWVisVDSP.h" "$HEADERS_DIR/"
+cp "$SRC_DIR/SWVisVDSP.h" "$SRC_DIR/SWVisBridge.h" "$HEADERS_DIR/"
 
 echo "==> Build device static lib"
-xcrun clang -fobjc-arc -isysroot "$(xcrun --sdk iphoneos --show-sdk-path)" \
+CLANG_IOS=$(xcrun --sdk iphoneos --find clang)
+"$CLANG_IOS" -fobjc-arc -isysroot "$(xcrun --sdk iphoneos --show-sdk-path)" \
   -fembed-bitcode -arch arm64 \
   -I"$SRC_DIR" \
   -framework Accelerate \
   -c "$SRC_DIR/SWVisVDSP.m" -o "$ARCHIVE_IOS/SWVisVDSP.o"
-libtool -static -o "$ARCHIVE_IOS/libswvis.a" "$ARCHIVE_IOS/SWVisVDSP.o"
+"$CLANG_IOS" -fobjc-arc -isysroot "$(xcrun --sdk iphoneos --show-sdk-path)" \
+  -fembed-bitcode -arch arm64 \
+  -I"$SRC_DIR" \
+  -framework Accelerate \
+  -c "$SRC_DIR/SWVisBridge.m" -o "$ARCHIVE_IOS/SWVisBridge.o"
+xcrun -sdk iphoneos libtool -static -o "$ARCHIVE_IOS/libswvis.a" "$ARCHIVE_IOS/SWVisVDSP.o" "$ARCHIVE_IOS/SWVisBridge.o"
 
 echo "==> Build simulator static lib"
-xcrun clang -fobjc-arc -isysroot "$(xcrun --sdk iphonesimulator --show-sdk-path)" \
+CLANG_SIM=$(xcrun --sdk iphonesimulator --find clang)
+"$CLANG_SIM" -fobjc-arc -isysroot "$(xcrun --sdk iphonesimulator --show-sdk-path)" \
   -fembed-bitcode -arch arm64 \
   -I"$SRC_DIR" \
   -framework Accelerate \
   -c "$SRC_DIR/SWVisVDSP.m" -o "$ARCHIVE_SIM/SWVisVDSP.o"
-libtool -static -o "$ARCHIVE_SIM/libswvis.a" "$ARCHIVE_SIM/SWVisVDSP.o"
+"$CLANG_SIM" -fobjc-arc -isysroot "$(xcrun --sdk iphonesimulator --show-sdk-path)" \
+  -fembed-bitcode -arch arm64 \
+  -I"$SRC_DIR" \
+  -framework Accelerate \
+  -c "$SRC_DIR/SWVisBridge.m" -o "$ARCHIVE_SIM/SWVisBridge.o"
+xcrun -sdk iphonesimulator libtool -static -o "$ARCHIVE_SIM/libswvis.a" "$ARCHIVE_SIM/SWVisVDSP.o" "$ARCHIVE_SIM/SWVisBridge.o"
 
 echo "==> Create XCFramework"
 xcrun xcodebuild -create-xcframework \
