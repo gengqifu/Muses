@@ -1,0 +1,12 @@
+# SoundwaveVisualization (iOS Native XCFramework)
+
+目标：提供不依赖 Flutter 的 iOS XCFramework，封装 PCM/FFT/导出等能力，供原生 App 或 Flutter 插件通过 Pod/SPM 依赖。
+
+当前状态（骨架）：
+- 目录：`native/ios-visualization/`
+- 提供 Podspec (`SoundwaveVisualization.podspec`) 与 SwiftPM 清单 (`Package.swift`)，引用同目录下的 `SoundwaveVisualization.xcframework`（待产出）。
+
+后续工作：
+- 将 `native/core` C++ 接入并编译为 XCFramework（含 arm64/x86_64 模拟器），提供 ObjC/Swift API。
+- 完善 Podspec/Package.swift 版本号与元数据；补充示例/验证脚本（`pod lib lint` / `swift package diagnose`）。
+- 对齐 Story08 测试计划（桥接/导出/FFT/节流验证）。***
