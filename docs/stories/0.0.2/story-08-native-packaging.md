@@ -10,9 +10,9 @@
 - ✖️ [2] 集成验证：Flutter Demo 依赖新原生包（本地/私有仓库）可构建运行。
 
 ## 开发任务
--**前置（阻塞项，需先完成）**
+**前置（阻塞项，需先完成）**
 - ✅ [3a] Android 原生产物：接入 native/core JNI 最小实现并生成 AAR，使用 `./tools/release/build_native_packages.sh` 发布到本地 maven（无 Flutter 依赖）。已增加 CMake/NDK 占位 JNI（`NativeBridge.nativeVersion()`）与 `libvisualizationcore.so` 构建链路，待与 native/core 联调。
-- ◻️ [4a] iOS 原生产物：基于 `native/ios-visualization` 生成 `SoundwaveVisualization.xcframework`（arm64 + 模拟器），完成 Podspec/SwiftPM 校验。
+- ✅ [4a] iOS 原生产物：基于 `native/ios-visualization` 生成占位 `SoundwaveVisualization.xcframework`（arm64 + 模拟器），完成 Podspec/SwiftPM 校验。新增 `scripts/build_stub_xcframework.sh` 用占位 C 版本号导出生成 XCFramework，后续替换为 native/core 能力。
 
 **实施**
 - ✅ [3] Android：新建/整理纯原生 module（无 Flutter 依赖），配置 maven-publish；迁移 ExoPlayer/KissFFT/PCM 管线代码。（已创建 `native/android-visualization` 骨架，maven-publish 配置 `com.soundwave:visualization-core:0.0.2-native-SNAPSHOT`，后续接入 native/core & JNI）

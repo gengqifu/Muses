@@ -1,0 +1,4 @@
+module SoundwaveVisualization {
+    header "SWVisStub.h"
+    export *
+}
