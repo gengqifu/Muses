@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "fft_spectrum.h"
 
@@ -50,6 +51,10 @@ struct PcmFrame {
   int num_channels = 0;
   int sample_rate = 0;
   int64_t timestamp_ms = 0;  // presentation time.
+  uint32_t sequence = 0;     // monotonically increasing sequence number.
+  uint32_t dropped_before = 0;  // frames dropped before this frame (for monitoring).
+  bool dropped = false;         // true if this is a drop marker (no PCM payload).
+  std::shared_ptr<std::vector<float>> owner;  // optional owner to keep data alive.
 };
 
 struct SpectrumFrame {
