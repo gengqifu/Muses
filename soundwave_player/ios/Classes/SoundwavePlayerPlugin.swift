@@ -446,14 +446,7 @@ private class AudioTapProcessor {
       }
       pcmPayloads.append(pcmPayload)
 
-      if let spectrum = computeSpectrum(samples: frame.samples) {
-        spectrumPayloads.append([
-          "sequence": frame.sequence,
-          "timestampMs": frame.timestampMs,
-          "bins": spectrum.bins,
-          "binHz": spectrum.binHz
-        ])
-      }
+      // TODO: 接入原生 KissFFT 结果（当前占位，无 spectrum 推送）。
     }
 
     let droppedPayload: [String: Any]? = {
@@ -521,41 +514,7 @@ private class AudioTapProcessor {
     }
   }
 
-  private func computeSpectrum(samples: [Double]) -> (bins: [Double], binHz: Double)? {
-    let n = 1024
-    if samples.isEmpty || sampleRate <= 0 { return nil }
-
-    var windowed = [Float](repeating: 0, count: n)
-    let len = min(samples.count, n)
-    for i in 0..<len {
-      windowed[i] = Float(samples[i])
-    }
-
-    // Apply Hann window
-    var hann = [Float](repeating: 0, count: n)
-    vDSP_hann_window(&hann, vDSP_Length(n), Int32(vDSP_HANN_NORM))
-    vDSP_vmul(windowed, 1, hann, 1, &windowed, 1, vDSP_Length(n))
-
-    let log2n = vDSP_Length(log2(Float(n)))
-    guard let setup = vDSP_create_fftsetup(log2n, FFTRadix(FFT_RADIX2)) else { return nil }
-    var real = [Float](repeating: 0, count: n/2)
-    var imag = [Float](repeating: 0, count: n/2)
-    var split = DSPSplitComplex(realp: &real, imagp: &imag)
-
-    windowed.withUnsafeBufferPointer { ptr in
-      ptr.baseAddress!.withMemoryRebound(to: DSPComplex.self, capacity: n/2) { complexPtr in
-        vDSP_ctoz(complexPtr, 2, &split, 1, vDSP_Length(n/2))
-      }
-    }
-
-    vDSP_fft_zrip(setup, &split, 1, log2n, FFTDirection(FFT_FORWARD))
-    var magnitudes = [Float](repeating: 0, count: n/2)
-    vDSP_zvabs(&split, 1, &magnitudes, 1, vDSP_Length(n/2))
-    vDSP_destroy_fftsetup(setup)
-
-    let binHz = sampleRate / Double(n)
-    return (magnitudes.map { Double($0) }, binHz)
-  }
+  // TODO: 接入原生 KissFFT 结果。
 }
 
 // MARK: - Audio session & notifications
