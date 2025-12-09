@@ -5,7 +5,8 @@
 - 确保跨端参数/归一化/线程模型一致，能被 Demo 及上层插件直接集成。
 
 ## 测试优先（TDD）
-- ◻️ [1] 频谱一致性：单频/双频/白噪/扫频基线（Hann、nfft=1024、归一化 2/(N*E_window)），Android（KissFFT）与 iOS（vDSP）误差 < 1e-3。
+- 前置基线：使用 `tools/fft_reference.py` 生成的 `docs/fft_reference_{single,double,white,sweep}.json` 作为黄金谱；统一参数 Hann、nfft=1024、归一化 2/(N*E_window)、fs=44.1k。
+- ◻️ [1] 频谱一致性：单/双频、白噪、扫频对照黄金谱，Android（KissFFT）与 iOS（vDSP）误差 < 1e-3（L2/Max）。
 - ◻️ [2] 回调/导出通路：PCM 节流、频谱回调、数据导出在原生层闭环验证（含线程安全），有 gtest/仪表或真机用例。
 
 ## 开发任务
@@ -16,5 +17,5 @@
 
 ## 完成标准（DoD）
 - ◻️ [7] 原生 AAR/XCFramework 含真实功能（FFT/PCM/导出/可视化回调），本地或私有仓库可发布并通过校验。
-- ◻️ [8] 跨端 FFT 对齐报告更新，误差在容差内，测试记录齐全。
-- ◻️ [9] 提供集成指南：插件/Demo 如何切换到新产物（Debug 本地、Release 仓库）。***
+- ◻️ [8] 跨端 FFT 对齐报告更新，引用 `docs/fft_reference_*.json` 基线，误差在容差内（L2/Max < 1e-3），含运行命令/环境记录。
+- ◻️ [9] 提供集成指南：插件/Demo 如何切换到新产物（Debug 本地、Release 仓库）。*** 
