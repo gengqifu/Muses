@@ -6,7 +6,7 @@
 ## 测试优先（TDD）
 - ✔️ [1] PCM 输入校验单测：采样率/通道突变、帧长异常、空数据等返回预期错误码。
 - ✔️ [2] 节流与序号单测：推送固定序列，验证节流生效、序号/时间戳连续性。
-- ✖️ [3] 接口契约测试：MethodChannel API 映射（push/subscribe/unsubscribe）行为正确。
+- ✔️ [3] 接口契约测试：MethodChannel API 映射（push/subscribe/unsubscribe）行为正确。
 
 ## 开发任务
 - ✔️ [4] 设计 PCM 帧数据结构（samples/sr/ch/ts/seq/frameSize），实现 ingress 校验与缓冲。
