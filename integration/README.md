@@ -3,7 +3,7 @@
 ### Android
 - 路径：`integration/android-host`
 - 依赖：使用已构建的 `core-release.aar`、`adapter-release.aar`（纯原生，无 Flutter）。`soundwave_player-release.aar` 仅供 Flutter 插件壳，不在宿主验证中使用。
-- 资源：`app/src/main/assets/sample_440.wav`、`sample_880.wav`（离线 2s 正弦波），可在界面下拉选择。
+- 资源：`app/src/main/assets/` 下已拷贝 `soundwave_player/example/assets/audio/` 的测试音频（wav/mp3），界面下拉可选择。
 - 构建/运行：
   1) 先在根目录执行 `cd soundwave_player/android && GRADLE_OPTS='-Dorg.gradle.native=false' ~/.gradle/wrapper/dists/gradle-8.1.1-bin/gradle-8.1.1/bin/gradle assembleRelease` 生成 AAR。
   2) 打开 `integration/android-host`，使用同一 Gradle 分发构建：`~/.gradle/wrapper/dists/gradle-8.1.1-bin/gradle-8.1.1/bin/gradle :app:assembleDebug`

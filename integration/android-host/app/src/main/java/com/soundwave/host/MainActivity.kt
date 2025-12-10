@@ -24,6 +24,7 @@ class MainActivity : AppCompatActivity() {
   private val handler = Handler(Looper.getMainLooper())
   private val sampleRateGuess = 48000 // Adapter未包含采样率，这里使用常见的 48k 作为估计。
   private lateinit var assetSpinner: Spinner
+  private val supportExt = setOf(".wav", ".mp3")
 
   private val pollTask = object : Runnable {
     override fun run() {
@@ -77,8 +78,9 @@ class MainActivity : AppCompatActivity() {
   }
 
   private fun setupAssetList() {
-    val names = assets.list("")?.filter { it.endsWith(".wav") }?.sorted()
-      ?: listOf("sample_440.wav")
+    val names = assets.list("")?.filter { name ->
+      supportExt.any { name.lowercase().endsWith(it) }
+    }?.sorted() ?: listOf("sample.wav")
     val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, names)
     adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
     assetSpinner.adapter = adapter
