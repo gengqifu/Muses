@@ -30,6 +30,7 @@ class _MyAppState extends State<MyApp> {
   AudioState _state = AudioState.initial();
   bool _initialized = false;
   bool _pushingPcm = false;
+  SoundwaveConfig? _config;
   final List<String> _testAssets = const [
     'sine_1k.wav',
     'square_1k.wav',
@@ -57,8 +58,10 @@ class _MyAppState extends State<MyApp> {
   Future<void> _init() async {
     try {
       debugPrint('Demo: init() start');
-      await _controller.init(const SoundwaveConfig(
-          sampleRate: 48000, bufferSize: 2048, channels: 2));
+      final config = const SoundwaveConfig(
+          sampleRate: 48000, bufferSize: 2048, channels: 2);
+      await _controller.init(config);
+      _config = config;
       _controller.states.listen((s) {
         setState(() {
           _state = s;
@@ -219,31 +222,31 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> _pushPcmFromAsset(String name) async {
     if (!_initialized || _pushingPcm) return;
+    final cfg = _config;
+    if (cfg == null) return;
     setState(() => _pushingPcm = true);
     try {
       await _controller.subscribeWaveform();
       await _controller.subscribeSpectrum();
       final wav = await _decodePcmWav('assets/audio/$name');
-      const expectedSampleRate = 48000;
-      if (wav.sampleRate != expectedSampleRate) {
-        _showError(
-            '示例仅支持 $expectedSampleRate Hz PCM，当前资产为 ${wav.sampleRate} Hz');
-        return;
-      }
+      final samples = (wav.sampleRate == cfg.sampleRate)
+          ? wav.samples
+          : _resampleInterleaved(
+              wav.samples, wav.channels, wav.sampleRate, cfg.sampleRate);
       const frameSamples = 1024;
       int sequence = 0;
+      final channels = wav.channels;
+      final sampleRate = cfg.sampleRate;
       for (int offset = 0;
-          offset < wav.samples.length;
-          offset += frameSamples * wav.channels) {
-        final end =
-            math.min(wav.samples.length, offset + frameSamples * wav.channels);
-        final chunk = wav.samples.sublist(offset, end);
-        final timestampMs =
-            ((offset / wav.channels) / wav.sampleRate * 1000).round();
+          offset < samples.length;
+          offset += frameSamples * channels) {
+        final end = math.min(samples.length, offset + frameSamples * channels);
+        final chunk = samples.sublist(offset, end);
+        final timestampMs = ((offset / channels) / sampleRate * 1000).round();
         final frame = PcmInputFrame(
             samples: chunk,
-            sampleRate: wav.sampleRate,
-            channels: wav.channels,
+            sampleRate: sampleRate,
+            channels: channels,
             timestampMs: timestampMs,
             sequence: sequence++);
         await _controller.pushPcmFrame(frame);
@@ -256,6 +259,27 @@ class _MyAppState extends State<MyApp> {
         setState(() => _pushingPcm = false);
       }
     }
+  }
+
+  List<double> _resampleInterleaved(
+      List<double> samples, int channels, int srcRate, int dstRate) {
+    if (srcRate == dstRate) return samples;
+    final srcFrames = samples.length ~/ channels;
+    final ratio = dstRate / srcRate;
+    final outFrames = (srcFrames * ratio).round();
+    final out = List<double>.filled(outFrames * channels, 0.0, growable: false);
+    for (int i = 0; i < outFrames; i++) {
+      final srcPos = i / ratio;
+      final i0 = srcPos.floor();
+      final frac = srcPos - i0;
+      final i1 = math.min(i0 + 1, srcFrames - 1);
+      for (int c = 0; c < channels; c++) {
+        final s0 = samples[i0 * channels + c];
+        final s1 = samples[i1 * channels + c];
+        out[i * channels + c] = s0 + (s1 - s0) * frac;
+      }
+    }
+    return out;
   }
 
   @override
