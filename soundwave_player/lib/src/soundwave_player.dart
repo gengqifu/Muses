@@ -168,6 +168,9 @@ class SoundwavePlayer {
   }
 
   String _mapErrorMessage(String code, String? message) {
+    if (message != null && message.isNotEmpty) {
+      return message;
+    }
     switch (code) {
       case 'invalid_format':
         return '格式错误：不支持的源或解码失败';
