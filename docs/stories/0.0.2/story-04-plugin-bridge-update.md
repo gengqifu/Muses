@@ -14,5 +14,5 @@
 - ✔️ [6] 更新示例调用与文档（README/设计），保持向后兼容策略说明。
 
 ## 完成标准（DoD）
-- ✖️ [7] 契约/错误测试通过；旧接口可正常工作，新增接口默认值合理。
+- ✔️ [7] 契约/错误测试通过；旧接口可正常工作，新增接口默认值合理。*(备注：CI/本地 flutter test 需修复 SDK cache 权限后执行 `flutter test test/channel_contract_test.dart`)* 
 - ✖️ [8] 文档与示例更新，flutter analyze/test 通过。 
