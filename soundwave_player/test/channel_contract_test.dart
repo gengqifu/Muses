@@ -216,6 +216,41 @@ void main() {
       expect(() => player.unsubscribeSpectrum(),
           throwsA(isA<SoundwaveException>().having((e) => e.code, 'code', 'unsub_error')));
     });
+
+    test('maps platform error codes to friendly messages', () async {
+      final player = SoundwavePlayer();
+      await player.init(const SoundwaveConfig(
+          sampleRate: 48000, bufferSize: 2048, channels: 2));
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (MethodCall call) async {
+        if (call.method == 'play') {
+          throw PlatformException(code: 'invalid_format', message: null);
+        }
+        if (call.method == 'pause') {
+          throw PlatformException(code: 'buffer_overflow', message: null);
+        }
+        if (call.method == 'stop') {
+          throw PlatformException(code: 'fft_error', message: 'native fft failed');
+        }
+        return null;
+      });
+
+      expect(
+          () => player.play(),
+          throwsA(isA<SoundwaveException>()
+              .having((e) => e.code, 'code', 'invalid_format')
+              .having((e) => e.message, 'message', contains('格式错误'))));
+      expect(
+          () => player.pause(),
+          throwsA(isA<SoundwaveException>()
+              .having((e) => e.code, 'code', 'buffer_overflow')
+              .having((e) => e.message, 'message', contains('缓冲过载'))));
+      expect(
+          () => player.stop(),
+          throwsA(isA<SoundwaveException>()
+              .having((e) => e.code, 'code', 'fft_error')
+              .having((e) => e.message, 'message', contains('native fft failed'))));
+    });
   });
 
   group('SoundwavePlayer EventChannel contract', () {

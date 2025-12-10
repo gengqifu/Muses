@@ -116,7 +116,8 @@ class SoundwavePlayer {
     try {
       return await _methodChannel.invokeMethod<T>(method, arguments);
     } on PlatformException catch (e) {
-      throw SoundwaveException(e.code, e.message ?? 'Unknown error', e.details);
+      final msg = _mapErrorMessage(e.code, e.message);
+      throw SoundwaveException(e.code, msg, e.details);
     }
   }
 
@@ -164,6 +165,19 @@ class SoundwavePlayer {
   Future<void> unsubscribeSpectrum() {
     _ensureInitialized();
     return _invoke<void>('unsubscribeSpectrum');
+  }
+
+  String _mapErrorMessage(String code, String? message) {
+    switch (code) {
+      case 'invalid_format':
+        return '格式错误：不支持的源或解码失败';
+      case 'buffer_overflow':
+        return '缓冲过载：输入过快或设备忙';
+      case 'fft_error':
+        return '频谱计算错误';
+      default:
+        return message ?? 'Unknown error';
+    }
   }
 
   void _ensureInitialized() {
