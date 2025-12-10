@@ -5,18 +5,13 @@ import androidx.media3.common.C
 import androidx.media3.common.audio.AudioProcessor
 import androidx.media3.exoplayer.audio.BaseAudioProcessor
 import androidx.media3.common.util.UnstableApi
-import com.soundwave.core.PcmFrame
+import com.soundwave.core.PcmFrameBuffer
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import java.util.concurrent.ConcurrentLinkedQueue
-import java.util.concurrent.atomic.AtomicInteger
 
 @UnstableApi
 class PcmTapProcessor : BaseAudioProcessor() {
-  private val queue: ConcurrentLinkedQueue<PcmFrame> = ConcurrentLinkedQueue()
-  private var sequence: Long = 0
-  private val droppedCounter = AtomicInteger(0)
-  private val maxQueueFrames = 60
+  private val buffer = PcmFrameBuffer()
   private var channelCount: Int = 1
 
   override fun onConfigure(inputAudioFormat: AudioProcessor.AudioFormat): AudioProcessor.AudioFormat {
@@ -76,30 +71,18 @@ class PcmTapProcessor : BaseAudioProcessor() {
       mixed
     }
 
-    if (queue.size >= maxQueueFrames) {
-      queue.poll()
-      droppedCounter.incrementAndGet()
-    }
-    queue.add(PcmFrame(sequence++, SystemClock.elapsedRealtime(), mono))
+    buffer.push(mono, SystemClock.elapsedRealtime())
   }
 
   override fun onQueueEndOfStream() { }
 
   public override fun onReset() {
-    queue.clear()
-    sequence = 0
-    droppedCounter.set(0)
+    buffer.onReset()
   }
 
   fun drain(maxFrames: Int): List<PcmFrame> {
-    if (maxFrames <= 0) return emptyList()
-    val out = mutableListOf<PcmFrame>()
-    repeat(maxFrames) {
-      val f = queue.poll() ?: return@repeat
-      out.add(f)
-    }
-    return out
+    return buffer.drain(maxFrames)
   }
 
-  fun droppedSinceLastDrain(): Int = droppedCounter.getAndSet(0)
+  fun droppedSinceLastDrain(): Int = buffer.droppedSinceLastDrain()
 }
