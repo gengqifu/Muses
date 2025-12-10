@@ -55,6 +55,7 @@ Future<void> pushPcm() async {
 ### 约束与注意
 - 初始化只允许一次；未 init 的调用会抛 `StateError`。
 - 参数校验：空 source、负 `seek`、非正 sampleRate/bufferSize/channels 会抛 `ArgumentError`。
+- 错误事件：原生错误码会映射为友好提示（如 network_error/invalid_format/buffer_overflow/fft_error/playback_error/timeout）；`SoundwaveException` 的 `message` 已包含映射结果。
 - 流式播放/弱网策略尚未实现（Story10 暂缓），当前聚焦本地播放。
 
 ### 可视化样式
