@@ -31,6 +31,10 @@ class _MyAppState extends State<MyApp> {
   bool _initialized = false;
   bool _pushingPcm = false;
   SoundwaveConfig? _config;
+  int _pcmFrames = 0;
+  int _pcmDropped = 0;
+  int _spectrumFrames = 0;
+  int _spectrumDropped = 0;
   final List<String> _testAssets = const [
     'sine_1k.wav',
     'square_1k.wav',
@@ -378,6 +382,9 @@ class _MyAppState extends State<MyApp> {
               if (_state.error != null)
                 Text('Error: ${_state.error}',
                     style: const TextStyle(color: Colors.red)),
+              Text('Waveform frames=$_pcmFrames dropped=$_pcmDropped'),
+              Text(
+                  'Spectrum frames=$_spectrumFrames dropped=$_spectrumDropped'),
               const SizedBox(height: 12),
               if (_initialized)
                 Column(
@@ -390,6 +397,15 @@ class _MyAppState extends State<MyApp> {
                         buffer: _controller.pcmBuffer,
                         background: Colors.black,
                         color: Colors.lightBlueAccent,
+                        frameInterval:
+                            const Duration(milliseconds: 33), // 约30fps节流
+                        maxFramesPerTick: 2,
+                        onDrain: (res) {
+                          setState(() {
+                            _pcmFrames += res.frames.length;
+                            _pcmDropped += res.droppedBefore;
+                          });
+                        },
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -398,6 +414,8 @@ class _MyAppState extends State<MyApp> {
                       height: 140,
                       child: SpectrumStreamView(
                         buffer: _controller.spectrumBuffer,
+                        frameInterval: const Duration(milliseconds: 33),
+                        maxFramesPerTick: 2,
                         // 与测试用例一致：线性频率轴 + 幅度对数压缩，便于对齐 golden。
                         style: const SpectrumStyle(
                           freqLogScale: false,
@@ -405,6 +423,12 @@ class _MyAppState extends State<MyApp> {
                           background: Colors.black,
                           barColor: Colors.cyan,
                         ),
+                        onDrain: (res) {
+                          setState(() {
+                            _spectrumFrames += res.frames.length;
+                            _spectrumDropped += res.droppedBefore;
+                          });
+                        },
                       ),
                     ),
                   ],
