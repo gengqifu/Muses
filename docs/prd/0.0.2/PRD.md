@@ -23,8 +23,8 @@
 - 核心交付
   - 数据接口：SDK 接收上层解码后的 PCM（float32，多声道交错，含采样率/通道数/时间戳），输出波形抽样与 FFT 频谱。
   - 原生可视化库：统一 KissFFT；封装 PCM 抽样与 FFT 输出，提供原生绘制示例。
-  - 库产物：Android 产出 AAR（支持发布 Maven），iOS 产出 XCFramework；同时保留源码 module 供调试。
-  - Flutter 接入：demo 复用现有插件桥接，必要时扩展 MethodChannel API；Flutter 侧绘制波形/频谱，可选择使用库内原生绘制示例。
+  - 库产物：Android 产出 AAR（支持发布 Maven），iOS 产出 XCFramework；核心实现放在独立原生库 module，Flutter 插件仅作为壳层依赖该原生库；同时保留源码 module 供调试。
+  - Flutter 接入：demo 复用现有插件桥接，必要时扩展 MethodChannel API；Flutter 插件不直接打包为对外发布的原生 SDK，原生 AAR/XCFramework 来自独立 SDK module；Flutter 侧绘制波形/频谱，可选择使用库内原生绘制示例。
   - 播放控制：上层应用负责播放（ExoPlayer/AVPlayer），SDK 可提供可选适配层以对齐 play/pause/stop/seek API 供 demo/集成使用。
   - 错误回调：库暴露错误码/错误信息回调给上层（输入格式错误、缓冲过载、FFT 计算异常等）。
   - 资源打包：demo 在 `pubspec.yaml` 中直接声明 `soundwave_player/example/assets/audio` 下的音频为 assets 并打包进 App。

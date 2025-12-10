@@ -3,7 +3,7 @@
 ## 1. 背景与目标
 - 完全移除 FFmpeg，播放解码由上层应用集成平台能力（Android ExoPlayer/MediaCodec，iOS AVPlayer/AVFoundation），SDK 接收解码后的 PCM。
 - 统一 FFT 实现为 KissFFT（Android/iOS 同一套参数和归一化），替换现有 Kotlin FFT 与 iOS vDSP。
-- 封装 PCM 处理（波形/频谱）能力为可发布的原生库：Android 产出 AAR（支持 Maven），iOS 产出 XCFramework；Flutter demo 通过插件桥接调用。
+- 封装 PCM 处理（波形/频谱）能力为可发布的原生库：Android 产出 AAR（支持 Maven），iOS 产出 XCFramework；核心实现放在独立原生 SDK module，Flutter 插件仅作为壳层依赖该 SDK，demo 通过插件桥接调用。
 - 项目许可证切换为 Apache License 2.0，同时保留第三方依赖 LICENSE 摘录（含 KissFFT）。
 - Demo 打包 `soundwave_player/example/assets/audio` 下的音频，便于开箱测试。
 
@@ -13,8 +13,8 @@
   - FFT：KissFFT 为唯一实现；参数统一（默认 nfft=1024，hop=512，Hann 窗，输出幅度谱归一化到 [0,1]，保留原始幅度）。
   - 数据面：PCM 输入后 downmix，再做节流输出波形帧与频谱帧。
   - API：核心聚焦初始化、参数配置、PCM 推送、波形/频谱订阅与错误回调；可选提供平台播放器适配层（对齐 ExoPlayer API）供 demo 快速集成。
-  - 产物：Android AAR（Maven 可发布）、iOS XCFramework；调试可直接依赖源码 module。
-  - Flutter 插件：优先复用现有 MethodChannel，补充映射新 API/错误回调；Flutter demo 绘制波形/频谱，可选调用库内原生绘制示例。
+  - 产物：Android AAR（Maven 可发布）、iOS XCFramework；核心封装在独立原生 SDK module，调试可直接依赖源码 module。
+  - Flutter 插件：优先复用现有 MethodChannel，补充映射新 API/错误回调；作为壳层依赖原生 SDK module；Flutter demo 绘制波形/频谱，可选调用库内原生绘制示例。
   - 许可：仓库主 LICENSE 改为 Apache 2.0，新增 NOTICE/DEPENDENCIES，列出 KissFFT 等第三方许可摘录。
 - 非目标（本版本不做）
   - 非平台解码器扩展（例如自建软解）。

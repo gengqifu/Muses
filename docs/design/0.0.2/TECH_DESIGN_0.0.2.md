@@ -96,8 +96,8 @@ flowchart LR
 ```
 
 ## 6. 构建与发布
-- Android：Gradle module 产出 AAR，支持 Maven 发布；CMake 构建 KissFFT 与核心；插件与 demo 可 path 依赖源码或依赖发布版。
-- iOS：XCFramework（静态/动态二合一），CMake/Xcode 构建；支持本地与二进制集成。
+- Android：独立原生 SDK module 使用 Gradle 产出 AAR（支持 Maven 发布），CMake 构建 KissFFT 与核心；Flutter 插件仅作为壳层依赖 SDK，demo 同样 path 依赖或引用发布版。
+- iOS：独立原生 SDK 生成 XCFramework（静态/动态二合一），CMake/Xcode 构建；Flutter 插件作为壳层依赖 SDK；支持本地与二进制集成。
 - 版本：与 PRD/计划一致采用 semver，同步 Android/iOS/Flutter 主次版本。
 - 资产：demo 在 `pubspec.yaml` 声明 `soundwave_player/example/assets/audio`，随包打进 App。
 
