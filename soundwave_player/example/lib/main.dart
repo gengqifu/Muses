@@ -224,6 +224,12 @@ class _MyAppState extends State<MyApp> {
       await _controller.subscribeWaveform();
       await _controller.subscribeSpectrum();
       final wav = await _decodePcmWav('assets/audio/$name');
+      const expectedSampleRate = 48000;
+      if (wav.sampleRate != expectedSampleRate) {
+        _showError(
+            '示例仅支持 $expectedSampleRate Hz PCM，当前资产为 ${wav.sampleRate} Hz');
+        return;
+      }
       const frameSamples = 1024;
       int sequence = 0;
       for (int offset = 0;
