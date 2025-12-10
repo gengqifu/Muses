@@ -13,10 +13,12 @@ flutter run  # 连接真机/模拟器
 - `Use bundled sample.mp3`：将内置示例音频拷贝到临时目录并填入输入框。
 - `Init` → `Load` → `Play`：依次初始化、加载并播放，页面下方会实时显示波形/频谱。
 - `Pause`/`Stop`/`Seek`：播放控制。
+- `Push PCM (sine_1k/square_1k)`：将内置 WAV 解析为 PCM 推送到插件，可演示波形/频谱链路。支持自动重采样到初始化的采样率。
 
 可视化说明：
-- 波形：按帧抽稀绘制，背景黑色，线色浅蓝。
-- 频谱：Hann 窗口 + FFT；默认频率轴为对数分布（低频更宽），如需线性可在 `SpectrumStyle(freqLogScale: false)` 调整。
+- 波形：按帧抽稀绘制，背景黑色，线色浅蓝；节流约 30fps。
+- 频谱：Hann 窗口 + FFT；默认频率轴为对数分布（低频更宽），如需线性可在 `SpectrumStyle(freqLogScale: false)` 调整；刷新约 30fps。
+- 页面会显示可视化累计帧数与丢弃数，方便观察节流/背压。
 
 故障排查：
 - 未初始化调用会抛异常；确保先点击 `Init`。
