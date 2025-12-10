@@ -496,8 +496,7 @@ class SoundwavePlayerPlugin : FlutterPlugin, MethodCallHandler {
   private fun mapError(error: PlaybackException): Pair<String, String> {
     val code = when (error.errorCode) {
       PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED,
-      PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT,
-      PlaybackException.ERROR_CODE_IO_NETWORK_OTHER -> "network_error"
+      PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT -> "network_error"
       PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED,
       PlaybackException.ERROR_CODE_PARSING_MANIFEST_MALFORMED,
       PlaybackException.ERROR_CODE_DECODER_INIT_FAILED -> "invalid_format"

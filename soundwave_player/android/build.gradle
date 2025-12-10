@@ -1,6 +1,14 @@
 group = "com.soundwave.soundwave_player"
 version = "1.0-SNAPSHOT"
 
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file('local.properties')
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withInputStream { stream -> localProperties.load(stream) }
+}
+def flutterSdkPath = localProperties.getProperty('flutter.sdk')
+def flutterJar = flutterSdkPath ? file("${flutterSdkPath}/bin/cache/artifacts/engine/android-arm64/flutter.jar") : null
+
 buildscript {
     ext.kotlin_version = "1.8.22"
     repositories {
@@ -66,8 +74,14 @@ dependencies {
     implementation("androidx.media3:media3-exoplayer:1.2.1")
     implementation("androidx.media3:media3-exoplayer-hls:1.2.1")
     implementation("androidx.media3:media3-session:1.2.1")
+    implementation("androidx.core:core-ktx:1.12.0")
     implementation(project(":core"))
     implementation(project(":adapter"))
+    if (flutterJar != null && flutterJar.exists()) {
+        compileOnly(files(flutterJar))
+    } else {
+        logger.warn("flutter.jar not found at ${flutterJar?.path}, Flutter embedding classes may be unresolved")
+    }
     testImplementation("org.jetbrains.kotlin:kotlin-test")
     testImplementation("org.mockito:mockito-core:5.0.0")
 }
