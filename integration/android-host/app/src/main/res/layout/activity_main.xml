@@ -15,12 +15,30 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
+    <TextView
+        android:id="@+id/assetLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="选择音频"
+        app:layout_constraintTop_toBottomOf="@id/status"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginTop="12dp" />
+
+    <Spinner
+        android:id="@+id/assetSpinner"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/status"
+        app:layout_constraintStart_toEndOf="@id/assetLabel"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginStart="8dp" />
+
     <com.google.android.material.button.MaterialButton
         android:id="@+id/playButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Play sample"
-        app:layout_constraintTop_toBottomOf="@id/status"
+        app:layout_constraintTop_toBottomOf="@id/assetSpinner"
         app:layout_constraintStart_toStartOf="parent"
         android:layout_marginTop="12dp" />
 
@@ -29,7 +47,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Stop"
-        app:layout_constraintTop_toBottomOf="@id/status"
+        app:layout_constraintTop_toBottomOf="@id/assetSpinner"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="12dp" />
 

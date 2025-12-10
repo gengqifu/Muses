@@ -5,6 +5,8 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import android.widget.ArrayAdapter
+import android.widget.Spinner
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.media3.common.MediaItem
@@ -21,6 +23,7 @@ class MainActivity : AppCompatActivity() {
   private lateinit var player: ExoPlayer
   private val handler = Handler(Looper.getMainLooper())
   private val sampleRateGuess = 48000 // Adapter未包含采样率，这里使用常见的 48k 作为估计。
+  private lateinit var assetSpinner: Spinner
 
   private val pollTask = object : Runnable {
     override fun run() {
@@ -52,15 +55,18 @@ class MainActivity : AppCompatActivity() {
     setContentView(R.layout.activity_main)
 
     player = ExoPlayer.Builder(this, PcmRenderersFactory(this, tap)).build()
+    assetSpinner = findViewById(R.id.assetSpinner)
+    setupAssetList()
 
     findViewById<MaterialButton>(R.id.playButton).setOnClickListener {
       // 默认播放 assets/sample.wav，离线可用。
-      val assetUri = Uri.parse("asset:///sample.wav")
+      val assetName = (assetSpinner.selectedItem as? String) ?: "sample_440.wav"
+      val assetUri = Uri.parse("asset:///$assetName")
       player.setMediaItem(MediaItem.fromUri(assetUri))
       player.prepare()
       player.play()
       handler.post(pollTask)
-      findViewById<TextView>(R.id.status).text = "Playing local asset…"
+      findViewById<TextView>(R.id.status).text = "Playing: $assetName"
     }
 
     findViewById<MaterialButton>(R.id.stopButton).setOnClickListener {
@@ -68,6 +74,14 @@ class MainActivity : AppCompatActivity() {
       handler.removeCallbacks(pollTask)
       findViewById<TextView>(R.id.status).text = "Stopped"
     }
+  }
+
+  private fun setupAssetList() {
+    val names = assets.list("")?.filter { it.endsWith(".wav") }?.sorted()
+      ?: listOf("sample_440.wav")
+    val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, names)
+    adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+    assetSpinner.adapter = adapter
   }
 
   override fun onDestroy() {
