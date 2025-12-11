@@ -5,7 +5,7 @@
 
 ## 测试优先（TDD）
 - ✅ [1] License 扫描：脚本/CI 运行通过，无 GPL/FFmpeg 残留。
-- ✖️ [2] NOTICE/DEPENDENCIES 校验：包含所有第三方依赖条目，格式正确。
+- ✅ [2] NOTICE/DEPENDENCIES 校验：包含所有第三方依赖条目，格式正确。
 
 ## 开发任务
 - ✖️ [3] 审核依赖清单，完善 LICENSE/NOTICE/DEPENDENCIES。
