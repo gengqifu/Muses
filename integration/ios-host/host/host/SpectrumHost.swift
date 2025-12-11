@@ -52,10 +52,13 @@ final class SpectrumHost: ObservableObject {
       return play()
     }
     do {
-      if !engine.isRunning {
-        try engine.start()
-      }
+      // 确保节点与引擎处于停止状态再调度，避免 IsRunning 断言。
+      player.stop()
+      engine.stop()
+      player.reset()
+
       schedule(from: currentFrame, file: file)
+      try engine.start()
       player.play()
       isPlaying = true
       status = "Playing \(defaultFile)"
@@ -88,18 +91,23 @@ final class SpectrumHost: ObservableObject {
     currentFrame = AVAudioFramePosition(Double(file.length) * target)
     currentTime = TimeInterval(currentFrame) / file.processingFormat.sampleRate
     if isPlaying {
+      stopTimer()
       player.stop()
+      engine.stop()
+      player.reset()
       schedule(from: currentFrame, file: file)
+      try? engine.start()
       player.play()
+      startTimer()
     }
   }
 
   private func schedule(from startFrame: AVAudioFramePosition, file: AVAudioFile) {
-    player.stop()
-    player.reset()
     let total = file.length
     guard startFrame < total else { return }
     let framesToPlay = AVAudioFrameCount(total - startFrame)
+    player.stop()
+    player.reset()
     engine.disconnectNodeOutput(player)
     engine.connect(player, to: engine.mainMixerNode, format: file.processingFormat)
     engine.disconnectNodeOutput(engine.mainMixerNode)

@@ -11,6 +11,7 @@ struct ContentView: View {
   @ObservedObject var host: SpectrumHost
   @State private var selectedFile: String = "sample.wav"
   @State private var sliderValue: Double = 0
+  @State private var isScrubbing: Bool = false
 
   private let audioFiles: [String] = [
     "sample.wav",
@@ -63,7 +64,7 @@ struct ContentView: View {
           value: Binding(
             get: {
               if host.duration <= 0 { return 0 }
-              return host.currentTime / host.duration
+              return isScrubbing ? sliderValue : host.currentTime / host.duration
             },
             set: { newVal in
               sliderValue = newVal
@@ -71,9 +72,8 @@ struct ContentView: View {
           ),
           in: 0...1,
           onEditingChanged: { editing in
-            if !editing {
-              host.seek(progress: sliderValue)
-            }
+            isScrubbing = editing
+            if !editing { host.seek(progress: sliderValue) }
           }
         )
         Text("\(formatTime(host.currentTime)) / \(formatTime(host.duration))")
@@ -106,6 +106,7 @@ struct ContentView: View {
     .padding()
     .onAppear {
       host.load(fileName: selectedFile)
+      sliderValue = 0
     }
   }
 
