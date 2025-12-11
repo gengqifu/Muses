@@ -4,7 +4,7 @@
 - 摆脱 FFmpeg 依赖，播放解码由上层应用自行集成平台能力（Android ExoPlayer / iOS AVPlayer/AVFoundation），SDK 接受解码后的 PCM。
 - 统一使用 KissFFT 完成本地 PCM → FFT 处理，提供跨平台一致的可视化能力。
 - 将 PCM 处理与可视化能力封装为可发布的原生库（Android AAR/Maven，iOS XCFramework），Flutter demo 通过插件桥接调用。
-- 更换项目许可证为 Apache License 2.0，保留第三方依赖（如 KissFFT）LICENSE 摘录。
+- 更换项目许可证为 Apache License 2.0，保留第三方依赖（KissFFT BSD-3、AndroidX/Media3/Kotlin Apache-2.0、Flutter/Dart BSD-3、iOS AVFoundation 遵循 Apple 平台条款）LICENSE 摘录。
 
 ## 2. 目标用户与场景
 - 目标用户：音频创作/调试用户、播客/配音创作者、研发测试人员。
@@ -28,7 +28,7 @@
   - 播放控制：上层应用负责播放（ExoPlayer/AVPlayer），SDK 可提供可选适配层以对齐 play/pause/stop/seek API 供 demo/集成使用。
   - 错误回调：库暴露错误码/错误信息回调给上层（输入格式错误、缓冲过载、FFT 计算异常等）。
   - 资源打包：demo 在 `pubspec.yaml` 中直接声明 `soundwave_player/example/assets/audio` 下的音频为 assets 并打包进 App。
-  - 许可证：仓库切换为 Apache 2.0，并附带第三方 LICENSE/NOTICE 摘录（含 KissFFT）。
+- 许可证：仓库切换为 Apache 2.0，并附带第三方 LICENSE/NOTICE 摘录（KissFFT BSD-3；AndroidX/Media3/Kotlin Apache-2.0；Flutter/Dart BSD-3；iOS AVFoundation 遵循 Apple 平台条款）。
 - 非目标（本版本不做）
   - 非平台解码器扩展（如外部硬件解码）。
   - 高阶编辑能力（标注、片段导出）仅规划不实现。
@@ -59,7 +59,11 @@
   - iOS：生成 XCFramework，支持本地集成与二进制分发。
   - 文档：提供接入说明、API 列表、错误码表、示例代码。
 - 许可
-  - 仓库主 LICENSE 改为 Apache 2.0；附上 KissFFT 等第三方 LICENSE 摘录与 NOTICE。
+  - 仓库主 LICENSE 改为 Apache 2.0；附上第三方 LICENSE/NOTICE 摘录：
+    - KissFFT BSD-3-Clause
+    - Flutter SDK / Dart 包（BSD-3-Clause）
+    - AndroidX / Media3 / Kotlin stdlib（Apache-2.0）
+    - iOS 平台 AVFoundation/AVAudioEngine（Apple 平台 SDK 条款）
 
 ## 7. 非功能需求
 - 兼容性：Android API 23+，iOS 8.0+。
@@ -79,9 +83,9 @@
 - FFT：KissFFT（含 LICENSE 摘录）。
 - 系统能力：文件访问、网络请求、音频输出、前后台生命周期。
 
--## 10. 风险与缓解
-+ 输入契约不一致：明确 PCM 规格与帧长约定，对采样率/通道变化提供错误码或动态适配。
-+ 平台解码差异（在可选适配层中）：对采样率/通道差异做适配，增加错误码覆盖。
+## 10. 风险与缓解
+- 输入契约不一致：明确 PCM 规格与帧长约定，对采样率/通道变化提供错误码或动态适配。
+- 平台解码差异（在可选适配层中）：对采样率/通道差异做适配，增加错误码覆盖。
 - AAR/XCFramework 发布流程：提前验证构建脚本与 CI；提供本地/远端仓库发布指引。
 - 性能与延迟：对回调节流、复用缓冲，避免在音频回调做重计算；FFT 可单独线程。
 - 兼容性：API 23+ / iOS 8+ 需验证旧设备表现，准备降级策略（降帧率/抽稀）。

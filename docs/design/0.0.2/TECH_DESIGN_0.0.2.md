@@ -3,7 +3,7 @@
 ## 1. 范围与背景
 - 解码职责上收：上层应用（或 demo）负责集成平台播放器（Android ExoPlayer/MediaCodec，iOS AVPlayer/AVAudioEngine），向 SDK 推送解码后的 PCM。
 - SDK 聚焦 PCM → 波形抽样 → KissFFT 频谱输出，产出 AAR（Maven）与 XCFramework，Flutter demo 通过插件桥接调用。
-- 许可证切换为 Apache 2.0，附第三方（KissFFT 等）LICENSE 摘录。
+- 许可证切换为 Apache 2.0，附第三方（KissFFT BSD-3；AndroidX/Media3/Kotlin Apache-2.0；Flutter/Dart BSD-3；iOS AVFoundation 遵循 Apple 平台条款）LICENSE 摘录。
 
 ## 2. 总体架构
 ```mermaid
@@ -111,4 +111,8 @@ flowchart LR
 - 集成：上层推送 PCM（本地/流式解码），验证波形/频谱同步；错误回调覆盖格式异常/缓冲过载；前后台切换恢复。
 - 跨端对齐：Android/iOS 同信号输出差异 <1e-3（幅度谱）。
 - 产物验证：AAR/XCFramework 构建、集成可用；Flutter demo 在源码/发布模式均可跑通。
-- 许可：Apache 2.0 + NOTICE/DEPENDENCIES，含 KissFFT 摘录。
+- 许可：Apache 2.0 + NOTICE/DEPENDENCIES，含 KissFFT 摘录；第三方依赖概览：
+  - KissFFT BSD-3-Clause
+  - Flutter SDK / Dart 包（BSD-3-Clause）
+  - AndroidX / Media3 / Kotlin stdlib（Apache-2.0）
+  - iOS 平台 AVFoundation/AVAudioEngine（Apple 平台 SDK 条款）
