@@ -1,0 +1,51 @@
+// swift-interface-format-version: 1.0
+// swift-compiler-version: Apple Swift version 6.1 effective-5.10 (swiftlang-6.1.0.110.21 clang-1700.0.13.3)
+// swift-module-flags: -target x86_64-apple-ios12.0-simulator -enable-objc-interop -enable-library-evolution -swift-version 5 -enforce-exclusivity=checked -Onone -enable-experimental-feature DebugDescriptionMacro -enable-bare-slash-regex -module-name SoundwaveCore
+// swift-module-flags-ignorable: -no-verify-emitted-module-interface -interface-compiler-version 6.1
+import Foundation
+@_exported import SoundwaveCore
+import Swift
+import _Concurrency
+import _StringProcessing
+import _SwiftConcurrencyShims
+import os.lock
+import os
+public struct PcmFrame {
+  public let sequence: Swift.Int64
+  public let timestampMs: Swift.Int64
+  public let samples: [Swift.Float]
+  public init(sequence: Swift.Int64, timestampMs: Swift.Int64, samples: [Swift.Float])
+}
+final public class PcmFrameBuffer {
+  public init(maxQueueFrames: Swift.Int = 60)
+  final public func push(samples: [Swift.Float], timestampMs: Swift.Int64)
+  final public func drain(maxFrames: Swift.Int) -> [SoundwaveCore.PcmFrame]
+  final public func droppedSinceLastDrain() -> Swift.Int
+  final public func reset()
+  @objc deinit
+}
+@_inheritsConvenienceInitializers @objc(SoundwaveCorePlaceholder) public class Placeholder : ObjectiveC.NSObject {
+  @objc public func version() -> Swift.String
+  @objc override dynamic public init()
+  @objc deinit
+}
+final public class SpectrumEngine {
+  public enum WindowType : Swift.Int32 {
+    case hann
+    case hamming
+    public init?(rawValue: Swift.Int32)
+    public typealias RawValue = Swift.Int32
+    public var rawValue: Swift.Int32 {
+      get
+    }
+  }
+  final public let windowSize: Swift.Int
+  final public let windowType: SoundwaveCore.SpectrumEngine.WindowType
+  final public let powerSpectrum: Swift.Bool
+  public init(windowSize: Swift.Int = 1024, windowType: SoundwaveCore.SpectrumEngine.WindowType = .hann, powerSpectrum: Swift.Bool = true)
+  final public func compute(samples: [Swift.Float], sampleRate: Swift.Int) -> (bins: [Swift.Float], binHz: Swift.Double)?
+  @objc deinit
+}
+extension SoundwaveCore.SpectrumEngine.WindowType : Swift.Equatable {}
+extension SoundwaveCore.SpectrumEngine.WindowType : Swift.Hashable {}
+extension SoundwaveCore.SpectrumEngine.WindowType : Swift.RawRepresentable {}
