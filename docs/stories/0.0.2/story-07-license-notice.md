@@ -8,7 +8,7 @@
 - ✅ [2] NOTICE/DEPENDENCIES 校验：包含所有第三方依赖条目，格式正确。
 
 ## 开发任务
-- ✖️ [3] 审核依赖清单，完善 LICENSE/NOTICE/DEPENDENCIES。
+- ✅ [3] 审核依赖清单，完善 LICENSE/NOTICE/DEPENDENCIES。
 - ✖️ [4] 更新 README/设计/PRD 中的许可声明，说明平台依赖许可。
 - ✖️ [5] 增加合规检查脚本/CI 步骤。
 
